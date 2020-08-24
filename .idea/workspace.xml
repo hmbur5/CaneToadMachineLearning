@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="8ccf8dc9-1aad-4ffa-86dc-28bed06e36fc" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/GetALAimages.py" afterPath="$PROJECT_DIR$/GetALAimages.py" />
+      <change beforePath="$PROJECT_DIR$/createProject.py" afterPath="$PROJECT_DIR$/createProject.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -14,7 +14,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="GetALAimages.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="GetALAimages.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GetALAimages.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="240">
@@ -24,13 +24,13 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="createProject.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="createProject.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/createProject.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="30">
+              <caret line="2" column="0" lean-forward="true" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
               <folding>
-                <element signature="e#0#91#0" expanded="true" />
+                <element signature="e#280#371#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -193,21 +193,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/createProject.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#91#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/GetALAimages.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="240">
           <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/createProject.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="30">
+          <caret line="2" column="0" lean-forward="true" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
+          <folding>
+            <element signature="e#280#371#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

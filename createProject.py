@@ -1,3 +1,7 @@
+# custom vision documentation can be found here:
+# https://azuresdkdocs.blob.core.windows.net/$web/python/azure-cognitiveservices-vision-customvision/3.0.0/azure.cognitiveservices.vision.customvision.prediction.html#module-azure.cognitiveservices.vision.customvision.prediction
+
+
 from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
 from azure.cognitiveservices.vision.customvision.training.models import ImageFileCreateBatch, ImageFileCreateEntry
 from msrest.authentication import ApiKeyCredentials
