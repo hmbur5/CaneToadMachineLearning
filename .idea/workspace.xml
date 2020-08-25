@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8ccf8dc9-1aad-4ffa-86dc-28bed06e36fc" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/Cane toad resources.docx" afterPath="$PROJECT_DIR$/Cane toad resources.docx" />
-      <change beforePath="$PROJECT_DIR$/GetALAimages.py" afterPath="$PROJECT_DIR$/GetALAimages.py" />
       <change beforePath="$PROJECT_DIR$/trainFromImageUrl.py" afterPath="$PROJECT_DIR$/trainFromImageUrl.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,8 +16,8 @@
       <file leaf-file-name="GetALAimages.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GetALAimages.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="187">
-              <caret line="22" column="0" lean-forward="true" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
+            <state relative-caret-position="344">
+              <caret line="24" column="29" lean-forward="true" selection-start-line="24" selection-start-column="29" selection-end-line="24" selection-end-column="29" />
               <folding />
             </state>
           </provider>
@@ -28,8 +26,8 @@
       <file leaf-file-name="createProject.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/createProject.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="187">
-              <caret line="48" column="0" lean-forward="false" selection-start-line="48" selection-start-column="0" selection-end-line="53" selection-end-column="12" />
+            <state relative-caret-position="30">
+              <caret line="2" column="0" lean-forward="true" selection-start-line="1" selection-start-column="2" selection-end-line="2" selection-end-column="0" />
               <folding>
                 <element signature="e#280#371#0" expanded="true" />
               </folding>
@@ -37,11 +35,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="trainFromImageUrl.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="trainFromImageUrl.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/trainFromImageUrl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="183">
-              <caret line="54" column="31" lean-forward="false" selection-start-line="54" selection-start-column="31" selection-end-line="54" selection-end-column="31" />
+            <state relative-caret-position="838">
+              <caret line="60" column="78" lean-forward="false" selection-start-line="60" selection-start-column="78" selection-end-line="60" selection-end-column="78" />
               <folding>
                 <element signature="e#0#91#0" expanded="true" />
               </folding>
@@ -49,7 +47,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="predictFromImageUrl.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="predictFromImageUrl.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/predictFromImageUrl.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="75">
@@ -78,8 +76,8 @@
       <find>trainer</find>
       <find>publish_iteration</find>
       <find>canetoad</find>
-      <find>imagefilecre</find>
       <find>create</find>
+      <find>imagefilecre</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -152,7 +150,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.predictFromImageUrl">
+  <component name="RunManager" selected="Python.trainFromImageUrl">
     <configuration name="GetALAimages" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -214,8 +212,8 @@
     </list>
     <recent_temporary>
       <list size="3">
-        <item index="0" class="java.lang.String" itemvalue="Python.predictFromImageUrl" />
-        <item index="1" class="java.lang.String" itemvalue="Python.trainFromImageUrl" />
+        <item index="0" class="java.lang.String" itemvalue="Python.trainFromImageUrl" />
+        <item index="1" class="java.lang.String" itemvalue="Python.predictFromImageUrl" />
         <item index="2" class="java.lang.String" itemvalue="Python.GetALAimages" />
       </list>
     </recent_temporary>
@@ -275,38 +273,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/createProject.py">
+    <entry file="file://$PROJECT_DIR$/predictFromImageUrl.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="48" column="0" lean-forward="false" selection-start-line="48" selection-start-column="0" selection-end-line="53" selection-end-column="12" />
-          <folding>
-            <element signature="e#280#371#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/GetALAimages.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="22" column="0" lean-forward="true" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trainFromImageUrl.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="183">
-          <caret line="54" column="31" lean-forward="false" selection-start-line="54" selection-start-column="31" selection-end-line="54" selection-end-column="31" />
+        <state relative-caret-position="75">
+          <caret line="5" column="0" lean-forward="true" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
           <folding>
             <element signature="e#0#91#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/predictFromImageUrl.py">
+    <entry file="file://$PROJECT_DIR$/GetALAimages.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="0" lean-forward="true" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+        <state relative-caret-position="344">
+          <caret line="24" column="29" lean-forward="true" selection-start-line="24" selection-start-column="29" selection-end-line="24" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/createProject.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="30">
+          <caret line="2" column="0" lean-forward="true" selection-start-line="1" selection-start-column="2" selection-end-line="2" selection-end-column="0" />
+          <folding>
+            <element signature="e#280#371#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trainFromImageUrl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="838">
+          <caret line="60" column="78" lean-forward="false" selection-start-line="60" selection-start-column="78" selection-end-line="60" selection-end-column="78" />
           <folding>
             <element signature="e#0#91#0" expanded="true" />
           </folding>

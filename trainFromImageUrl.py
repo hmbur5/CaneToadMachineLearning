@@ -4,6 +4,7 @@ from msrest.authentication import ApiKeyCredentials
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from msrest.authentication import ApiKeyCredentials
 import GetALAimages
+import math
 
 
 # setting up project using keys
@@ -23,16 +24,7 @@ for project in trainer.get_projects():
     if project.name == 'Cane Toad Classifier Python':
         break
 # iteration name must be changed each iteration to publish
-publish_iteration_name = "classifyModel_urls_control"
-
-# finding tag ids
-for tag in trainer.get_tags(project.id):
-    if tag.name == 'cane toad':
-        canetoad_tag = trainer.get_tag(project.id, tag.id)
-    if tag.name == 'Striped marsh frog':
-        frog_tag = trainer.get_tag(project.id, tag.id)
-    # can do other tags here too
-
+publish_iteration_name = "classifyModel_large"
 
 
 
@@ -41,28 +33,44 @@ for tag in trainer.get_tags(project.id):
 print("Adding images...")
 
 
-# getting image urls using ALA file for cane toads
-image_url_list = GetALAimages.listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
+# getting image urls using ALA file for each species (iterative as we can only upload 64 images at a time)
+for species in ['caneToad', 'stripedMarshFrogs']:
 
-image_list = []
-# going through a small portion of list as can only do 64 at a time
-for url in image_url_list[0:32]:
-    image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[canetoad_tag.id]))
+    # finding tag id
+    for tag in trainer.get_tags(project.id):
+        if tag.name == species:
+            break
 
-# getting image urls using ALA file for striped marsh frogs
-image_url_list = GetALAimages.listOfAlaImageUrls('ala image urls/stripedMarshFrogsRawFile.csv')
+    file_dir = 'ala image urls/' + species + 'RawFile.csv'
+    image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+    for batch_number in range(math.floor(len(image_url_list)/64)):
+        image_list = []
+        # going through a small portion of list as can only do 64 at a time
+        for url in image_url_list[batch_number*64:(batch_number+1)*64]:
+            image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
 
-# going through a small portion of list as can only do 64 at a time
-for url in image_url_list[0:32]:
-    image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[frog_tag.id]))
+
+        upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
+
+        # gives error when there is a duplicate (which is possible with the ALA data) so code below is to ignore
+        # duplicate error.
+        while not upload_result.is_batch_successful:
+            image_list = []
+            for image in upload_result.images:
+                if image.status == 'OK':
+                    # add to new new image_list with corresponding url and tag
+                    image_list.append(ImageUrlCreateEntry(url=image.source_url, tag_ids=[tag.id]))
+                elif image.status != 'OKDuplicate':
+                    print("Image batch upload failed.")
+                    print("Image status: ", image.status)
+                    print("Image url: ", image.source_url)
+                    #exit(-1)
+            if len(image_list)>0:
+                upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
+            else:
+                break
 
 
-upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
-if not upload_result.is_batch_successful:
-    print("Image batch upload failed.")
-    for image in upload_result.images:
-        print("Image status: ", image.status)
-    exit(-1)
 
 
 import time
