@@ -25,7 +25,7 @@ def listOfAlaImageUrls(file_dir):
     # for entries that correspond to an image, put in URL form for immediate download
     url_list = []
     for url_id in url_id_list:
-        if url_id != '' and url_id!='image _ url':
+        if url_id != '' and 'image' not in url_id:
             url_string = 'https://images.ala.org.au/store/'
             # add last 4 digits in reverse order
             for i in range(1,5):

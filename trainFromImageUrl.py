@@ -22,12 +22,15 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 for project in trainer.get_projects():
     if project.name == 'Cane Toad Classifier Python':
         break
-publish_iteration_name = "classifyModel_urls"
+# iteration name must be changed each iteration to publish
+publish_iteration_name = "classifyModel_urls_control"
 
-# finding cane toad tag id
+# finding tag ids
 for tag in trainer.get_tags(project.id):
     if tag.name == 'cane toad':
         canetoad_tag = trainer.get_tag(project.id, tag.id)
+    if tag.name == 'Striped marsh frog':
+        frog_tag = trainer.get_tag(project.id, tag.id)
     # can do other tags here too
 
 
@@ -43,9 +46,15 @@ image_url_list = GetALAimages.listOfAlaImageUrls('ala image urls/caneToadRawFile
 
 image_list = []
 # going through a small portion of list as can only do 64 at a time
-for url in image_url_list[0:64]:
+for url in image_url_list[0:32]:
     image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[canetoad_tag.id]))
 
+# getting image urls using ALA file for striped marsh frogs
+image_url_list = GetALAimages.listOfAlaImageUrls('ala image urls/stripedMarshFrogsRawFile.csv')
+
+# going through a small portion of list as can only do 64 at a time
+for url in image_url_list[0:32]:
+    image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[frog_tag.id]))
 
 
 upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
