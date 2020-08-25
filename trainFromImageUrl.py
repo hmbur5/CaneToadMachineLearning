@@ -24,7 +24,7 @@ for project in trainer.get_projects():
     if project.name == 'Cane Toad Classifier Python':
         break
 # iteration name must be changed each iteration to publish
-publish_iteration_name = "classifyModel_large"
+publish_iteration_name = "classifyModel_large2"
 
 
 
@@ -34,7 +34,7 @@ print("Adding images...")
 
 
 # getting image urls using ALA file for each species (iterative as we can only upload 64 images at a time)
-for species in ['caneToad', 'stripedMarshFrogs']:
+for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog']:
 
     # finding tag id
     for tag in trainer.get_tags(project.id):
