@@ -39,4 +39,3 @@ def listOfAlaImageUrls(file_dir):
     return url_list
 
 
-print(listOfAlaImageUrls('ala image urls/caneToadRawFile.csv'))

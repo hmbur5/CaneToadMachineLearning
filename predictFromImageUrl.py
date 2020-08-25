@@ -18,7 +18,7 @@ def predict(image_url):
     trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
     project = trainer.get_project('c3656572-45da-465e-9614-3eb4a5041625')
-    publish_iteration_name = "classifyModel"
+    publish_iteration_name = "classifyModel_urls"
 
     # Now there is a trained endpoint that can be used to make a prediction
     prediction_credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
