@@ -5,6 +5,7 @@ from azure.cognitiveservices.vision.customvision.prediction import CustomVisionP
 from msrest.authentication import ApiKeyCredentials
 import GetALAimages
 import math
+import csv
 
 
 # setting up project using keys
@@ -32,6 +33,8 @@ publish_iteration_name = "classifyModel1"
 # training with image urls
 print("Adding images...")
 
+# initialise list which stores a bunch of labelled images for testing later
+test_list = []
 
 # getting image urls using ALA file for each species (iterative as we can only upload 64 images at a time)
 for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australianGreenTreeFrog', 'bumpyRockFrog',
@@ -54,13 +57,15 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
     image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
 
     # going through a small portion of url list as can only upload 64 at a time
-    for batch_number in range(math.ceil(len(image_url_list)/64)):
+    for batch_number in range(math.ceil(len(image_url_list)/65)):
         image_list = []
-        endIndex = (batch_number+1)*64
+        endIndex = (batch_number+1)*65
         if endIndex > len(image_url_list):
             endIndex = len(image_url_list)
-        for url in image_url_list[batch_number*64: endIndex]:
+        for url in image_url_list[batch_number*65: endIndex-1]:
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
+        # every 65 items, add one to the testing images
+        test_list.append(image_url_list[endIndex])
 
 
         upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
@@ -82,7 +87,10 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
             else:
                 break
 
-
+# save urls for testing to a csv file
+with open('predictions/binaryAll.csv', 'wb') as myfile:
+    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    wr.writerows(test_list)
 
 
 import time

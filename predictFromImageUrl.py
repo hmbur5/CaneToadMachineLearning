@@ -3,6 +3,7 @@ from azure.cognitiveservices.vision.customvision.training.models import ImageFil
 from msrest.authentication import ApiKeyCredentials
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from msrest.authentication import ApiKeyCredentials
+import csv
 
 
 def predict(image_url):
@@ -35,4 +36,14 @@ def predict(image_url):
               ": {0:.2f}%".format(prediction.probability * 100))
 
 
-predict('https://images.ala.org.au/store/b/6/6/6/61f0ec42-362c-45d1-a1a3-69c415ac666b/original')
+
+# open urls for testing
+with open('predictions/binaryAll.csv', 'wb') as myfile:
+    for url in myfile:
+        print(url)
+
+        # if in right form predict url
+        predict(url)
+
+        # figure out how to add percentage to csv
+
