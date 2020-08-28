@@ -21,13 +21,12 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # Create a new project
 print ("Creating project...")
-project = trainer.create_project("Cane Toad Classifier Python")
+project = trainer.create_project("Cane Toad Classifier Binary")
 
 
 # Make two tags in the new project
 canetoad_tag = trainer.create_tag(project.id, "cane toad")
-frog_tag = trainer.create_tag(project.id, "frog")
-
+negative_tag = trainer.create_tag(project.id, "not cane toad", type='Negative')
 
 
 base_image_url = "alaPhotos/"
@@ -44,7 +43,7 @@ for image_num in range(0, 5):
 for image_num in range(0, 5):
     file_name = "frog_{}.jpg".format(image_num)
     with open(base_image_url + "frog/" + file_name, "rb") as image_contents:
-        image_list.append(ImageFileCreateEntry(name=file_name, contents=image_contents.read(), tag_ids=[frog_tag.id]))
+        image_list.append(ImageFileCreateEntry(name=file_name, contents=image_contents.read(), tag_ids=[negative_tag.id]))
 
 upload_result = trainer.create_images_from_files(project.id, ImageFileCreateBatch(images=image_list))
 if not upload_result.is_batch_successful:

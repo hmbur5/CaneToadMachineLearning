@@ -21,14 +21,14 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'Cane Toad Classifier Python':
+    if project.name == 'Cane Toad Classifier Binary':
         break
 # iteration name must be changed each iteration to publish
-publish_iteration_name = "classifyModel_moreSpecies"
+publish_iteration_name = "classifyModel1"
 
 
 
-# comment
+
 # training with image urls
 print("Adding images...")
 
@@ -36,15 +36,19 @@ print("Adding images...")
 # getting image urls using ALA file for each species (iterative as we can only upload 64 images at a time)
 for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australianGreenTreeFrog', 'bumpyRockFrog',
                 'crawlingToadlet', 'daintyGreenTreeFrog', 'desertFroglet', 'desertTreeFrog', 'giantFrog', 'hootingFrog',
-                 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
+                'longFootedFrog', 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
                 'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog']:
 
     # finding tag id
     for tag in trainer.get_tags(project.id):
-        if tag.name == species:
-            break
-    if tag.name!=species:
-        tag = trainer.create_tag(project.id, species)
+        if species=='caneToad':
+            if tag.name == 'cane toad':
+                break
+        else:
+            # replacing species tag with Negative for non-cane toads
+            if tag.name== 'not cane toad':
+                break
+
 
     file_dir = 'ala image urls/' + species + 'RawFile.csv'
     image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
