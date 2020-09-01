@@ -30,7 +30,7 @@ publish_iteration_name = "classify_model_witholding_some_images"
 
 
 # clear existing training images
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
 
 # training with image urls
 print("Adding images...")
@@ -66,8 +66,9 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
             endIndex = len(image_url_list)
         for url in image_url_list[batch_number*67: endIndex-3]:
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
-        # every 67 items, add 3 to the testing images
-        test_list += image_url_list[endIndex-3:endIndex]
+        # every 67 items, add 3 to the testing images, along with their actual species
+        for i in range(endIndex-3,endIndex):
+            test_list.append([image_url_list[i], species])
 
         # check that there are some images to train on, then upload these
         if len(image_list) > 0:
@@ -92,13 +93,13 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
 
 
-
 # save urls for testing to a csv file
-test_list = [[el] for el in test_list]
+#test_list = [[el] for el in test_list]
 with open('predictions/binaryAll.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter = ',')
     wr.writerows(test_list)
 
+exit(-1)
 
 import time
 
