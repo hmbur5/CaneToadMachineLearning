@@ -94,8 +94,9 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
 
 # save urls for testing to a csv file
-with open('predictions/binaryAll.csv', 'wb') as myfile:
-    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+test_list = [[el] for el in test_list]
+with open('predictions/binaryAll.csv', 'w') as myfile:
+    wr = csv.writer(myfile, delimiter = ',')
     wr.writerows(test_list)
 
 
