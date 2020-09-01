@@ -68,7 +68,8 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
         # every 67 items, add 3 to the testing images, along with their actual species
         for i in range(endIndex-3,endIndex):
-            test_list.append([image_url_list[i], species])
+            if i>=0 and i<len(image_url_list):
+                test_list.append([image_url_list[i], species])
 
         # check that there are some images to train on, then upload these
         if len(image_list) > 0:

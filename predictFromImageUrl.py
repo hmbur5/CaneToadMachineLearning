@@ -43,11 +43,12 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 testing_image_urls = []
 with open('predictions/binaryAll.csv', 'r') as myfile:
     for url in myfile:
-        testing_image_urls.append(url)
+        url, species = url.split(',')
+        testing_image_urls.append([url, species])
 
 # get prediction percentages
 image_predictions = []
-for url in testing_image_urls:
+for url,species in testing_image_urls:
     try:
         results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
@@ -80,14 +81,14 @@ for url in testing_image_urls:
     if results is not None:
         caneToad = results.predictions[0]
         percentage = caneToad.probability
-        image_predictions.append([url, percentage])
-        print(percentage)
     else:
-        image_predictions.append([url, 'NA'])
+        percentage = 'NA'
 
+    print(percentage)
+    image_predictions.append([url, species, percentage])
 
 # get in ascending order of probability
-sorted_predictions = sorted(image_predictions, key=lambda tup: tup[1])
+sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
 
 
 # write new file with image urls and prediction percentages
