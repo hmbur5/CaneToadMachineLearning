@@ -59,15 +59,15 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
     image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
 
     # going through a small portion of url list as can only upload 64 at a time
-    for batch_number in range(math.ceil(len(image_url_list)/65)):
+    for batch_number in range(math.ceil(len(image_url_list)/67)):
         image_list = []
-        endIndex = (batch_number+1)*65
+        endIndex = (batch_number+1)*67
         if endIndex > len(image_url_list):
-            endIndex = len(image_url_list)-1
-        for url in image_url_list[batch_number*65: endIndex-1]:
+            endIndex = len(image_url_list)
+        for url in image_url_list[batch_number*67: endIndex-3]:
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
-        # every 65 items, add one to the testing images
-        test_list.append(image_url_list[endIndex])
+        # every 67 items, add 3 to the testing images
+        test_list += image_url_list[endIndex-3:endIndex]
 
 
         upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
@@ -88,7 +88,6 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
                 upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
             else:
                 break
-
 
 
 
