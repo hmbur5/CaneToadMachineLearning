@@ -43,7 +43,7 @@ with open('predictions/binaryAll.csv', 'wb') as myfile:
         print(url)
 
         # if in right form predict url
-        predict(url)
+        print(predict(url))
 
         # figure out how to add percentage to csv
 

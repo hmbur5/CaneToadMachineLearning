@@ -69,25 +69,26 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
         # every 67 items, add 3 to the testing images
         test_list += image_url_list[endIndex-3:endIndex]
 
+        # check that there are some images to train on, then upload these
+        if len(image_list) > 0:
+            upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
 
-        upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
-
-        # gives error when there is a duplicate (which is possible with the ALA data) so code below is to ignore
-        # duplicate error.
-        while not upload_result.is_batch_successful:
-            image_list = []
-            for image in upload_result.images:
-                if image.status == 'OK':
-                    # add to new new image_list with corresponding url and tag
-                    image_list.append(ImageUrlCreateEntry(url=image.source_url, tag_ids=[tag.id]))
-                elif image.status != 'OKDuplicate':
-                    print("Image batch upload failed.")
-                    print("Image status: ", image.status)
-                    print("Image url: ", image.source_url)
-            if len(image_list)>0:
-                upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
-            else:
-                break
+            # gives error when there is a duplicate (which is possible with the ALA data) so code below is to ignore
+            # duplicate error.
+            while not upload_result.is_batch_successful:
+                image_list = []
+                for image in upload_result.images:
+                    if image.status == 'OK':
+                        # add to new new image_list with corresponding url and tag
+                        image_list.append(ImageUrlCreateEntry(url=image.source_url, tag_ids=[tag.id]))
+                    elif image.status != 'OKDuplicate':
+                        print("Image batch upload failed.")
+                        print("Image status: ", image.status)
+                        print("Image url: ", image.source_url)
+                if len(image_list)>0:
+                    upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
+                else:
+                    break
 
 
 
