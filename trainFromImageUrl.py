@@ -25,10 +25,12 @@ for project in trainer.get_projects():
     if project.name == 'Cane Toad Classifier Binary':
         break
 # iteration name must be changed each iteration to publish
-publish_iteration_name = "classifyModel1"
+publish_iteration_name = "classify_model_witholding_some_images"
 
 
 
+# clear existing training images
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
 
 # training with image urls
 print("Adding images...")
@@ -61,7 +63,7 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
         image_list = []
         endIndex = (batch_number+1)*65
         if endIndex > len(image_url_list):
-            endIndex = len(image_url_list)
+            endIndex = len(image_url_list)-1
         for url in image_url_list[batch_number*65: endIndex-1]:
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
         # every 65 items, add one to the testing images
@@ -86,6 +88,10 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
                 upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
             else:
                 break
+
+
+
+
 
 # save urls for testing to a csv file
 with open('predictions/binaryAll.csv', 'wb') as myfile:
