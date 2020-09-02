@@ -96,3 +96,14 @@ sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
 with open('predictions/multitagsAll_predicted.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter = ',')
     wr.writerows(sorted_predictions)
+
+# write html file
+with open('predictions/multitagsAll_predicted.html', 'w') as myfile:
+    myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
+    myfile.write('<tr><th>Image</th><th>Ala label</th><th>Cane toad prob</th></tr>')
+    for url, species, percentage in sorted_predictions:
+        myfile.write('<tr>')
+        myfile.write("<td><img src='"+ url + "' width='250' height='250' alt=''/></td>")
+        myfile.write("<td>"+species+"</td>")
+        myfile.write("<td>"+str(percentage)+"</td>")
+        myfile.write('</tr>')
