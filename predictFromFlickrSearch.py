@@ -12,11 +12,11 @@ extras='url_sq,url_t,url_s,url_q,url_m,url_n,url_z,url_c,url_l,url_o'
 
 
 # iterating through different search queries and saving the predictions to a file.
-searchQueries = ['frog', 'toad', 'cane toad', 'magpie']
+searchQueries = ['frog', 'toad', 'cane toad', 'magpie', 'lizard']
 for search in searchQueries:
     print(search)
     photoUrls = []
-    photoSearch = flickr.photos.search(text=search, per_page=50, extras=extras)
+    photoSearch = flickr.photos.search(text=search, per_page=100, extras=extras)
     photos = photoSearch['photos']
     for element in photos['photo']:
         try:

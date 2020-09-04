@@ -100,13 +100,13 @@ def predictFromImageUrl(testing_image_urls, file_name):
         wr.writerows(sorted_predictions)
 
     # write html file
-    with open('predictions/'+file_name+'predicted.html', 'w') as myfile:
+    with open('predictions/'+file_name+'.html', 'w') as myfile:
         myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
-        myfile.write('<tr><th>Image</th><th>Description</th><th>Cane toad prob</th></tr>')
+        myfile.write('<tr><th>Image</th><th>Cane toad prob</th></tr>')
         for url, species, percentage in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
-            myfile.write("<td>"+species+"</td>")
+            #myfile.write("<td>"+species+"</td>")
             myfile.write("<td>"+str(percentage)+"</td>")
             myfile.write('</tr>')
 
