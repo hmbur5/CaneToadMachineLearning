@@ -38,72 +38,87 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 
 
+def predictFromImageUrl(testing_image_urls, file_name):
+    '''
+    Takes a list of image urls, and saves a csv and html file giving the probability of each photo being a cane toad
+    :param testing_image_urls: a list of image urls, where each element in the list is a list of two elements; the url
+    and the label/description of the image
+    :param file_name: directory for csv and html file to be placed in.
+    :return:
+    '''
 
-# initialise list to store image urls from file
-testing_image_urls = []
-with open('predictions/multitagsAll.csv', 'r') as myfile:
-    for url in myfile:
-        url, species = url.split(',')
-        testing_image_urls.append([url, species])
-
-# get prediction percentages
-image_predictions = []
-for url,species in testing_image_urls:
-    try:
-        results = predictor.classify_image_url(project.id, publish_iteration_name, url)
-
-    # not sure what exception should be as custom vision gives a strange error.
-    except:
+    # get prediction percentages
+    image_predictions = []
+    for url,species in testing_image_urls:
         try:
-            # if images are too large for prediction (must be <4mb), use python to scale down
-            img = urllib.request.urlopen(url)
-            img = Image.open(img)
+            results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
-            # resize
-            height,width = img.size
-            currentSize = len(img.fp.read())
-            # these numbers could probably be better
-            maxDim = math.floor(max([width,height]) * 4194304 / currentSize / 3)
-            img.thumbnail((maxDim, maxDim))
+        # not sure what exception should be as custom vision gives a strange error.
+        except:
+            print('too large')
+            try:
+                # if images are too large for prediction (must be <4mb), use python to scale down
+                img = urllib.request.urlopen(url)
+                img = Image.open(img)
 
-
-            # convert back to byte object for classify_image
-            imgByteArr = BytesIO()
-            img.save(imgByteArr, format='PNG')
-            imgByteArr = imgByteArr.getvalue()
-
-            results = predictor.classify_image(project.id, publish_iteration_name, imgByteArr)
-
-        # if image actually doesn't exist
-        except OSError:
-            pass
-
-    if results is not None:
-        for tag in results.predictions:
-            if tag.tag_name == 'caneToad':
-                percentage = tag.probability
-    else:
-        percentage = 'NA'
-
-    print(percentage)
-    image_predictions.append([url, species, percentage])
-
-# get in ascending order of probability
-sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
+                # resize
+                height,width = img.size
+                currentSize = len(img.fp.read())
+                # these numbers could probably be better
+                maxDim = math.floor(max([width,height]) * 4194304 / currentSize / 3)
+                img.thumbnail((maxDim, maxDim))
 
 
-# write new file with image urls and prediction percentages
-with open('predictions/multitagsAll_predicted.csv', 'w') as myfile:
-    wr = csv.writer(myfile, delimiter = ',')
-    wr.writerows(sorted_predictions)
+                # convert back to byte object for classify_image
+                imgByteArr = BytesIO()
+                img.save(imgByteArr, format='PNG')
+                imgByteArr = imgByteArr.getvalue()
 
-# write html file
-with open('predictions/multitagsAll_predicted.html', 'w') as myfile:
-    myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
-    myfile.write('<tr><th>Image</th><th>Ala label</th><th>Cane toad prob</th></tr>')
-    for url, species, percentage in sorted_predictions:
-        myfile.write('<tr>')
-        myfile.write("<td><img src='"+ url + "' width='250' height='250' alt=''/></td>")
-        myfile.write("<td>"+species+"</td>")
-        myfile.write("<td>"+str(percentage)+"</td>")
-        myfile.write('</tr>')
+                results = predictor.classify_image(project.id, publish_iteration_name, imgByteArr)
+
+            # if image actually doesn't exist
+            except OSError:
+                pass
+
+        if results is not None:
+            for tag in results.predictions:
+                if tag.tag_name == 'caneToad':
+                    percentage = tag.probability
+        else:
+            percentage = 'NA'
+
+        print(percentage)
+        image_predictions.append([url, species, percentage])
+
+    # get in ascending order of probability
+    sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
+
+
+    # write new file with image urls and prediction percentages
+    with open('predictions/'+file_name+'.csv', 'w') as myfile:
+        wr = csv.writer(myfile, delimiter = ',')
+        wr.writerows(sorted_predictions)
+
+    # write html file
+    with open('predictions/'+file_name+'predicted.html', 'w') as myfile:
+        myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
+        myfile.write('<tr><th>Image</th><th>Ala label</th><th>Cane toad prob</th></tr>')
+        for url, species, percentage in sorted_predictions:
+            myfile.write('<tr>')
+            myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
+            myfile.write("<td>"+species+"</td>")
+            myfile.write("<td>"+str(percentage)+"</td>")
+            myfile.write('</tr>')
+
+
+
+
+
+# to use for photos that werent in training
+def predict_from_csv():
+    # initialise list to store image urls from file
+    testing_image_urls = []
+    with open('predictions/multitagsAll.csv', 'r') as myfile:
+        for url in myfile:
+            url, species = url.split(',')
+            testing_image_urls.append([url, species])
