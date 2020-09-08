@@ -1,5 +1,11 @@
 import csv
-
+import matplotlib.pyplot as plt
+from skimage import io
+import sys
+import csv
+import os, ssl
+if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None)):
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 def listOfAlaImageUrls(file_dir):
     '''
@@ -38,4 +44,62 @@ def listOfAlaImageUrls(file_dir):
 
     return url_list
 
+
+
+def manualConfirmationOfImages(unchecked_image_urls):
+    '''
+    Function to open a set of images, and wait for Y or N to split them into two lists
+    (one of cane toad training images, one of not cane toads)
+    This is necessary as some ALA images are of skeletons, tad poles etc
+    As the list is so large, the files are built up iteratively
+    :param unchecked_image_urls: list of image urls
+    '''
+
+    # create list of all processed images
+    processedURLS = []
+    try:
+        with open('ala image urls/confirmedCaneToads.csv', 'r', newline='') as f:
+            for line in f:
+                line = line.replace('\r\n','')
+                processedURLS.append(line)
+        with open('ala image urls/confirmedNotCaneToads.csv', 'r', newline='') as f:
+            for line in f:
+                line = line.replace('\r\n', '')
+                processedURLS.append(line)
+    except FileNotFoundError:
+        pass
+
+    for image_url in unchecked_image_urls:
+        if image_url in processedURLS:
+            continue
+        # print each image and wait for key press
+        image = io.imread(image_url)
+        fig, ax = plt.subplots()
+        ax.imshow(image)
+        ax.set_title('c for cane toad, n for not cane toad')
+        # calls function press when key is pressed
+        fig.canvas.mpl_connect('key_press_event', lambda event: press(event, image_url, plt))
+        plt.show()
+
+
+def press(event, image_url, plt):
+    sys.stdout.flush()
+    if event.key == 'c':
+        plt.close()
+        with open('ala image urls/confirmedCaneToads.csv', 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows([[image_url]])
+    elif event.key == 'n':
+        plt.close()
+        with open('ala image urls/confirmedNotCaneToads.csv', 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows([[image_url]])
+
+
+
+
+
+file_dir = 'ala image urls/caneToadRawFile.csv'
+unchecked_image_urls = listOfAlaImageUrls(file_dir)
+manualConfirmationOfImages(unchecked_image_urls)
 

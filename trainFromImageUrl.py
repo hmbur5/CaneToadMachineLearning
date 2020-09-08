@@ -59,17 +59,17 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
     image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
 
     # going through a small portion of url list as can only upload 64 at a time
-    for batch_number in range(math.ceil(len(image_url_list)/67)):
+    for batch_number in range(math.ceil(len(image_url_list)/64)):
         image_list = []
-        endIndex = (batch_number+1)*67
+        endIndex = (batch_number+1)*64
         if endIndex > len(image_url_list):
             endIndex = len(image_url_list)
-        for url in image_url_list[batch_number*67: endIndex-3]:
+        for url in image_url_list[batch_number*64: endIndex]:
             image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
         # every 67 items, add 3 to the testing images, along with their actual species
-        for i in range(endIndex-3,endIndex):
-            if i>=0 and i<len(image_url_list):
-                test_list.append([image_url_list[i], species])
+        #for i in range(endIndex-3,endIndex):
+        #    if i>=0 and i<len(image_url_list):
+        #        test_list.append([image_url_list[i], species])
 
         # check that there are some images to train on, then upload these
         if len(image_list) > 0:
@@ -96,9 +96,9 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
 # save urls for testing to a csv file
 #test_list = [[el] for el in test_list]
-with open('predictions/binaryAll.csv', 'w') as myfile:
-    wr = csv.writer(myfile, delimiter = ',')
-    wr.writerows(test_list)
+#with open('predictions/binaryAll.csv', 'w') as myfile:
+#    wr = csv.writer(myfile, delimiter = ',')
+#    wr.writerows(test_list)
 
 exit(-1)
 
