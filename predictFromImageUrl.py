@@ -17,9 +17,9 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
 
 ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-training_key = "cde7deba2d5d4df5b768b50b700c46b7"
-prediction_key = "fb49a542a16a47e6b68b2983db158c32"
-prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
+training_key = "d7ad3915f5d649bab3a37981753ebd28"
+prediction_key = "e50cdc3b9f2a4e9cb67a1ccc2e6e5f5b"
+prediction_resource_id = "/subscriptions/6ac046c3-c689-49cd-82f5-e75510d7022f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadsTraining"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})

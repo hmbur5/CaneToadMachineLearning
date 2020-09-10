@@ -45,6 +45,13 @@ def listOfAlaImageUrls(file_dir):
     return url_list
 
 
+def listOfCheckedImages(file_dir):
+    image_url_list = []
+    with open(file_dir, 'r', newline='') as f:
+        for line in f:
+            line = line.replace('\r\n', '')
+            image_url_list.append(line)
+    return image_url_list
 
 def manualConfirmationOfImages(unchecked_image_urls):
     '''

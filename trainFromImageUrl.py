@@ -12,9 +12,10 @@ import csv
 
 ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-training_key = "cde7deba2d5d4df5b768b50b700c46b7"
-prediction_key = "fb49a542a16a47e6b68b2983db158c32"
-prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
+# using hmbur5@student.monash.edu
+training_key = "d7ad3915f5d649bab3a37981753ebd28"
+prediction_key = "e50cdc3b9f2a4e9cb67a1ccc2e6e5f5b"
+prediction_resource_id = "/subscriptions/6ac046c3-c689-49cd-82f5-e75510d7022f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadsTraining"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -22,10 +23,10 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'Cane Toad Classifier Binary':
+    if project.name == 'CaneToadClassifier Multilabel':
         break
 # iteration name must be changed each iteration to publish
-publish_iteration_name = "classify_model_witholding_some_images"
+publish_iteration_name = "classify_model_basic"
 
 
 
@@ -42,12 +43,15 @@ test_list = []
 for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australianGreenTreeFrog', 'bumpyRockFrog',
                 'crawlingToadlet', 'daintyGreenTreeFrog', 'desertFroglet', 'desertTreeFrog', 'giantFrog', 'hootingFrog',
                 'longFootedFrog', 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
-                'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog']:
+                'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog', 'questionableCaneToad']:
 
     # finding tag id
     for tag in trainer.get_tags(project.id):
         if species=='caneToad':
             if tag.name == 'cane toad':
+                break
+        elif species=='questionableCaneToad':
+            if tag.name == 'questionable cane toad':
                 break
         else:
             # replacing species tag with Negative for non-cane toads
@@ -55,8 +59,13 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
                 break
 
 
-    file_dir = 'ala image urls/' + species + 'RawFile.csv'
-    image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+
+    if species =='caneToad':
+        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
+    else:
+        file_dir = 'ala image urls/' + species + 'RawFile.csv'
+        image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+
 
     # going through a small portion of url list as can only upload 64 at a time
     for batch_number in range(math.ceil(len(image_url_list)/64)):
