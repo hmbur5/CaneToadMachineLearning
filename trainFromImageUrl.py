@@ -23,7 +23,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'CaneToadClassifier Multilabel':
+    if project.name == 'test':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -31,7 +31,7 @@ publish_iteration_name = "classify_model_basic"
 
 
 # clear existing training images
-#trainer.delete_images(project.id, all_images=True, all_iterations=True)
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
 
 # training with image urls
 print("Adding images...")
@@ -62,6 +62,8 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
     if species =='caneToad':
         image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
+    elif species=='questionableCaneToad':
+        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedNotCaneToads.csv')
     else:
         file_dir = 'ala image urls/' + species + 'RawFile.csv'
         image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
@@ -69,6 +71,12 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
     # going through a small portion of url list as can only upload 64 at a time
     for batch_number in range(math.ceil(len(image_url_list)/64)):
+        
+        # removing every third batch to reduce number of not cane toads, to get balanced data
+        if species!='caneToad' and species!='questionableCaneToad':
+            if batch_number%3==1:
+                break
+
         image_list = []
         endIndex = (batch_number+1)*64
         if endIndex > len(image_url_list):
