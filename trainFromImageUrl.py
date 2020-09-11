@@ -31,7 +31,7 @@ publish_iteration_name = "classify_model_basic"
 
 
 # clear existing training images
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
 
 # training with image urls
 print("Adding images...")
@@ -71,7 +71,7 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 
     # going through a small portion of url list as can only upload 64 at a time
     for batch_number in range(math.ceil(len(image_url_list)/64)):
-        
+
         # removing every third batch to reduce number of not cane toads, to get balanced data
         if species!='caneToad' and species!='questionableCaneToad':
             if batch_number%3==1:
