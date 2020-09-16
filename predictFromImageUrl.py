@@ -15,11 +15,13 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
-ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
+# setting up project using keys
+ENDPOINT = "https://canetoad-prediction.cognitiveservices.azure.com/"
 
-training_key = "d7ad3915f5d649bab3a37981753ebd28"
-prediction_key = "e50cdc3b9f2a4e9cb67a1ccc2e6e5f5b"
-prediction_resource_id = "/subscriptions/6ac046c3-c689-49cd-82f5-e75510d7022f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadsTraining"
+# using hmbur5@student.monash.edu
+training_key = "567bc1a3b9d4479283887d68c1d7f46c"
+prediction_key = "6b9d10b6c8bc42878d92fe94213256a1"
+prediction_resource_id = "/subscriptions/d0bdc746-b59f-4a0c-b651-9865282bcd1a/resourceGroups/CaneToadMachineLearning/providers/Microsoft.CognitiveServices/accounts/CaneToad-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -27,9 +29,9 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'Cane Toad Classifier Binary':
+    if project.name == 'all':
         break
-publish_iteration_name = "AllImages"
+publish_iteration_name = "Iteration1"
 
 # Now there is a trained endpoint that can be used to make a prediction
 prediction_credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
@@ -106,7 +108,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
         for url, species, percentage in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
-            #myfile.write("<td>"+species+"</td>")
+            myfile.write("<td>"+species+"</td>")
             myfile.write("<td>"+str(percentage)+"</td>")
             myfile.write('</tr>')
 

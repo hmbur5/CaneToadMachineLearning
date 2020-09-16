@@ -59,7 +59,7 @@ def addImages(image_url_list, tag_name):
                             height, width = img.size
                             currentSize = len(img.fp.read())
                             # these numbers could probably be better
-                            maxDim = math.floor(max([width, height]) * 4194304 / currentSize / 3)
+                            maxDim = math.floor(max([width, height]) * 4194304 / currentSize / 4)
                             img.thumbnail((maxDim, maxDim))
 
                             # convert back to byte object for classify_image
@@ -74,7 +74,7 @@ def addImages(image_url_list, tag_name):
 
                         # if image actually doesn't exist
                         except OSError:
-                            pass
+                            print(image.source_url)
                 if len(image_list)>0:
                     upload_result = trainer.create_images_from_urls(project.id, ImageFileCreateBatch(images=image_list))
                 else:
@@ -83,9 +83,9 @@ def addImages(image_url_list, tag_name):
 
 
 
-def train(iteration_number):
+def train(iteration_name):
     # iteration name must be changed each iteration to publish
-    publish_iteration_name = str(iteration_number)
+    publish_iteration_name = iteration_name
 
     print("Training...")
     iteration = trainer.train_project(project.id)
@@ -100,14 +100,16 @@ def train(iteration_number):
     print("Done!")
 
 
-def predict(image_url):
+def predict(image_url, iteration_name):
+    print(iteration_name)
+
     # get prediction percentages
     try:
-        results = predictor.classify_image_url(project.id, publish_iteration_name, image_url)
+        results = predictor.classify_image_url(project.id, iteration_name, image_url)
 
     # not sure what exception should be as custom vision gives a strange error.
     except:
-        print('too large')
+        print('resizing')
         try:
             # if images are too large for prediction (must be <4mb), use python to scale down
             img = urllib.request.urlopen(image_url)
@@ -126,30 +128,30 @@ def predict(image_url):
             img.save(imgByteArr, format='PNG')
             imgByteArr = imgByteArr.getvalue()
 
-            results = predictor.classify_image(project.id, publish_iteration_name, imgByteArr)
+            results = predictor.classify_image(project.id, iteration_name, imgByteArr)
 
         # if image actually doesn't exist
         except OSError:
             pass
 
-        if results is not None:
-            for tag in results.predictions:
-                if tag.tag_name == 'cane toad':
-                    percentage = tag.probability
-        else:
-            percentage = 'NA'
+    try:
+        for tag in results.predictions:
+            if tag.tag_name == 'cane toad':
+                percentage = tag.probability
+    except UnboundLocalError:
+        percentage = 'NA'
 
     return percentage
 
 
 # setting up project using keys
 
-ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
+ENDPOINT = "https://canetoad-prediction.cognitiveservices.azure.com/"
 
 # using hmbur5@student.monash.edu
-training_key = "d7ad3915f5d649bab3a37981753ebd28"
-prediction_key = "e50cdc3b9f2a4e9cb67a1ccc2e6e5f5b"
-prediction_resource_id = "/subscriptions/6ac046c3-c689-49cd-82f5-e75510d7022f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadsTraining"
+training_key = "567bc1a3b9d4479283887d68c1d7f46c"
+prediction_key = "6b9d10b6c8bc42878d92fe94213256a1"
+prediction_resource_id = "/subscriptions/d0bdc746-b59f-4a0c-b651-9865282bcd1a/resourceGroups/CaneToadMachineLearning/providers/Microsoft.CognitiveServices/accounts/CaneToad-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -157,7 +159,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'CaneToadClassifier Multilabel':
+    if project.name == 'iterative':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -169,7 +171,7 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 # clear existing training images
 trainer.delete_images(project.id, all_images=True, all_iterations=True)
-
+#exit(-1)
 
 # training with image urls
 print("Adding images...")
@@ -220,32 +222,45 @@ for i in range(0,50)*np.floor(len(NtestingURLS)/50):
 CtrainingURLS = np.random.choice(CtestingURLS, 50, replace=False)
 NtrainingURLS = np.random.choice(NtestingURLS, 50, replace=False)
 
+
 addImages(CtrainingURLS, 'cane toad')
 addImages(NtrainingURLS, 'other frog')
 
-train(iteration_number=1)
+train(iteration_name='Iteration2.1')
 
 
 # now refine
-for iteration in range(5):
+iteration = 1
+
+while len(CtestingURLS)>0:
     CtrainingURLS = []
     NtrainingURLS = []
     # test on cane toad images
     for image_url in np.random.choice(CtestingURLS, 100, replace=False):
         # if it doesn't classify as cane toad, add to training data
-        if predict(image_url) < 0.95:
+        prediction = predict(image_url, 'Iteration2.'+str(iteration))
+        if prediction == 'NA':
+            print(image_url)
+            CtestingURLS.remove(image_url)
+        elif prediction < 0.95:
             CtrainingURLS.append(image_url)
             CtestingURLS.remove(image_url)
 
     # test on not cane toad images
-        for image_url in np.random.choice(NtestingURLS, 100, replace=False):
-            # if it doesn't classify as cane toad, add to training data
-            if predict(image_url) > 0.95:
-                NtrainingURLS.append(image_url)
-                NtestingURLS.remove(image_url)
+    for image_url in np.random.choice(NtestingURLS, 100, replace=False):
+        # if it doesn't classify as cane toad, add to training data
+        prediction = predict(image_url, 'Iteration2.'+str(iteration))
+        if prediction == 'NA':
+            print(image_url)
+            NtestingURLS.remove(image_url)
+        elif prediction > 0.95:
+            NtrainingURLS.append(image_url)
+            NtestingURLS.remove(image_url)
     addImages(CtrainingURLS, 'cane toad')
     addImages(NtrainingURLS, 'other frog')
-    train(iteration)
+    train('Iteration2.'+str(iteration+1))
+
+    iteration+=1
 
 
 
