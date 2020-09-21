@@ -15,13 +15,11 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
-# setting up project using keys
-ENDPOINT = "https://canetoad-prediction.cognitiveservices.azure.com/"
+ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-# using hmbur5@student.monash.edu
-training_key = "567bc1a3b9d4479283887d68c1d7f46c"
-prediction_key = "6b9d10b6c8bc42878d92fe94213256a1"
-prediction_resource_id = "/subscriptions/d0bdc746-b59f-4a0c-b651-9865282bcd1a/resourceGroups/CaneToadMachineLearning/providers/Microsoft.CognitiveServices/accounts/CaneToad-Prediction"
+training_key = "cde7deba2d5d4df5b768b50b700c46b7"
+prediction_key = "fb49a542a16a47e6b68b2983db158c32"
+prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -29,9 +27,10 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'all':
+    if project.name == 'Cane Toad Classifier Binary':
         break
-publish_iteration_name = "Iteration1"
+publish_iteration_name = "AllImages"
+
 
 # Now there is a trained endpoint that can be used to make a prediction
 prediction_credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
@@ -51,7 +50,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
 
     # get prediction percentages
     image_predictions = []
-    for url,species, lat, long in testing_image_urls:
+    for url,species, lat, long, date in testing_image_urls:
         try:
             results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
@@ -90,7 +89,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
             percentage = 'NA'
 
         print(percentage)
-        image_predictions.append([url, species, percentage, lat, long])
+        image_predictions.append([url, species, percentage, lat, long, date])
 
     # get in ascending order of probability
     sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
@@ -99,14 +98,14 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # write new file with image urls and prediction percentages
     with open('predictions/'+file_name+'.csv', 'w') as myfile:
         wr = csv.writer(myfile, delimiter = ',')
-        wr.writerows([['url','source','prediction','lat','long']])
+        wr.writerows([['url','source','prediction','lat','long','date']])
         wr.writerows(sorted_predictions)
 
     # write html file
     with open('predictions/'+file_name+'.html', 'w') as myfile:
         myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
         myfile.write('<tr><th>Image</th><th>Cane toad prob</th></tr>')
-        for url, species, percentage, lat, long in sorted_predictions:
+        for url, species, percentage, lat, long, date in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
             myfile.write("<td>"+species+"</td>")
@@ -124,4 +123,4 @@ def predict_from_csv():
     with open('predictions/binaryAll.csv', 'r') as myfile:
         for url in myfile:
             url, species = url.split(',')
-            testing_image_urls.append([url, species, 'NA', 'NA'])
+            testing_image_urls.append([url, species, 'NA', 'NA', 'NA'])

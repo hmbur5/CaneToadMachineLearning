@@ -145,13 +145,11 @@ def predict(image_url, iteration_name):
 
 
 # setting up project using keys
+ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-ENDPOINT = "https://canetoad-prediction.cognitiveservices.azure.com/"
-
-# using hmbur5@student.monash.edu
-training_key = "567bc1a3b9d4479283887d68c1d7f46c"
-prediction_key = "6b9d10b6c8bc42878d92fe94213256a1"
-prediction_resource_id = "/subscriptions/d0bdc746-b59f-4a0c-b651-9865282bcd1a/resourceGroups/CaneToadMachineLearning/providers/Microsoft.CognitiveServices/accounts/CaneToad-Prediction"
+training_key = "cde7deba2d5d4df5b768b50b700c46b7"
+prediction_key = "fb49a542a16a47e6b68b2983db158c32"
+prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -225,7 +223,7 @@ while len(CtestingURLS)>0:
     addImages(CtrainingURLS, 'cane toad')
     addImages(NtrainingURLS, 'other frog')
 
-    train(iteration_name='Iteration1' + str(iteration))
+    train(iteration_name='Iteration1.' + str(iteration))
 
 
     CtrainingURLS = []
@@ -235,12 +233,12 @@ while len(CtestingURLS)>0:
     for image_url in np.random.choice(CtestingURLS, 100, replace=False):
         # if it doesn't classify as cane toad, add to training data
         prediction = predict(image_url, 'Iteration1.'+str(iteration))
+        print(prediction)
         if prediction == 'NA':
             print(image_url)
             CtestingURLS.remove(image_url)
 
         elif prediction < 0.95:
-            print(prediction)
             if GetALAimages.manualConfirmationOfTest(image_url):
                 # add to training and remove from testing
                 CtrainingURLS.append(image_url)
