@@ -171,6 +171,8 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 # clear existing training images
 trainer.delete_images(project.id, all_images=True, all_iterations=True)
+time.sleep(1)
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
 #exit(-1)
 
 # training with image urls
@@ -189,76 +191,72 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
                 'longFootedFrog', 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
                 'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog']:
 
-    if species=='caneToad' or species =='questionCaneToad':
-        tag_name = species
-    else:
-        tag_name = 'otherFrog'
 
-
-    if species =='caneToad':
-        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
-        CtestingURLS = image_url_list
-    elif species=='questionableCaneToad':
-        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedNotCaneToads.csv')
+    file_dir = 'ala image urls/' + species + 'RawFile.csv'
+    image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+    if species=='caneToad':
+        CtestingURLS += image_url_list
     else:
-        file_dir = 'ala image urls/' + species + 'RawFile.csv'
-        image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
         NtestingURLS += image_url_list
-
 
 # build a control for testing afterwards
 CcontrolURLS = []
 NcontrolURLS = []
-for i in range(0,50)*np.floor(len(CtestingURLS)/50):
+for i in range(0,50)*np.floor(len(CtestingURLS)/51):
     CcontrolURLS.append(CtestingURLS[int(i)])
     CtestingURLS.remove(CtestingURLS[int(i)])
-for i in range(0,50)*np.floor(len(NtestingURLS)/50):
+for i in range(0,50)*np.floor(len(NtestingURLS)/51):
     NcontrolURLS.append(NtestingURLS[int(i)])
     NtestingURLS.remove(NtestingURLS[int(i)])
 
 
 
-# add 100 of each N and C into training data
-CtrainingURLS = np.random.choice(CtestingURLS, 50, replace=False)
-NtrainingURLS = np.random.choice(NtestingURLS, 50, replace=False)
+# add 100 of each N and C into training data, using only verified cane toad images
+checkedCaneToads = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
+CtrainingURLS = np.random.choice(checkedCaneToads, 100, replace=False)
+NtrainingURLS = np.random.choice(NtestingURLS, 100, replace=False)
 
-
-addImages(CtrainingURLS, 'cane toad')
-addImages(NtrainingURLS, 'other frog')
-
-train(iteration_name='Iteration2.1')
 
 
 # now refine
 iteration = 1
 
 while len(CtestingURLS)>0:
+    addImages(CtrainingURLS, 'cane toad')
+    addImages(NtrainingURLS, 'other frog')
+
+    train(iteration_name='Iteration1' + str(iteration))
+
+
     CtrainingURLS = []
     NtrainingURLS = []
-    # test on cane toad images
+    # test on cane toad images, and unless 95% sure these are cane toads, we check the photo before adding to training
+    # (as some ala images contain tadpoles and skeletons)
     for image_url in np.random.choice(CtestingURLS, 100, replace=False):
         # if it doesn't classify as cane toad, add to training data
-        prediction = predict(image_url, 'Iteration2.'+str(iteration))
+        prediction = predict(image_url, 'Iteration1.'+str(iteration))
         if prediction == 'NA':
             print(image_url)
             CtestingURLS.remove(image_url)
+
         elif prediction < 0.95:
+            print(prediction)
+            if GetALAimages.manualConfirmationOfTest(image_url):
+                # add to training and remove from testing
+                CtrainingURLS.append(image_url)
+                CtestingURLS.remove(image_url)
+            # if not a good cane toad image, simply remove this
+            else:
+                CtestingURLS.remove(image_url)
+        elif prediction>= 0.95:
+            # add to training and remove from testing
             CtrainingURLS.append(image_url)
             CtestingURLS.remove(image_url)
 
-    # test on not cane toad images
     for image_url in np.random.choice(NtestingURLS, 100, replace=False):
-        # if it doesn't classify as cane toad, add to training data
-        prediction = predict(image_url, 'Iteration2.'+str(iteration))
-        if prediction == 'NA':
-            print(image_url)
-            NtestingURLS.remove(image_url)
-        elif prediction > 0.95:
-            NtrainingURLS.append(image_url)
-            NtestingURLS.remove(image_url)
-    addImages(CtrainingURLS, 'cane toad')
-    addImages(NtrainingURLS, 'other frog')
-    train('Iteration2.'+str(iteration+1))
+        # add to training and remove from testing
+        NtrainingURLS.append(image_url)
+        NtestingURLS.remove(image_url)
 
     iteration+=1
 

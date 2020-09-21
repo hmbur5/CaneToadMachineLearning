@@ -7,6 +7,8 @@ import os, ssl
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None)):
     ssl._create_default_https_context = ssl._create_unverified_context
 
+manualConfirm = None
+
 def listOfAlaImageUrls(file_dir):
     '''
     Gets urls of all images from an occurrence search download, based on file given by ALA
@@ -104,6 +106,33 @@ def press(event, image_url, plt):
 
 
 
+def manualConfirmationOfTest(image_url):
+    global manualConfirm
+    '''
+    Function to open an image, and wait for key press C or N to return True if user decides it is a cane toad, and
+    false if not
+    This is necessary as some ALA images are of skeletons, tad poles etc
+    :param image_url: image urls
+    '''
+    # print each image and wait for key press
+    image = io.imread(image_url)
+    fig, ax = plt.subplots()
+    ax.imshow(image)
+    ax.set_title('c for cane toad, n for not cane toad')
+    # calls function press when key is pressed
+    fig.canvas.mpl_connect('key_press_event', lambda event: pressTest(event, image_url, plt))
+    plt.show()
+    return manualConfirm
+
+def pressTest(event, image_url, plt):
+    global manualConfirm
+    sys.stdout.flush()
+    if event.key == 'c':
+        plt.close()
+        manualConfirm = True
+    elif event.key == 'n':
+        plt.close()
+        manualConfirm = False
 
 
 file_dir = 'ala image urls/caneToadRawFile.csv'

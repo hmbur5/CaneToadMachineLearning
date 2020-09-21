@@ -43,15 +43,15 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 def predictFromImageUrl(testing_image_urls, file_name):
     '''
     Takes a list of image urls, and saves a csv and html file giving the probability of each photo being a cane toad
-    :param testing_image_urls: a list of image urls, where each element in the list is a list of two elements; the url
-    and the label/description of the image
+    :param testing_image_urls: a list of image urls, where each element in the list is a list of 4 elements; the
+    url, the label/description of the image, and the latitude and longitude
     :param file_name: directory for csv and html file to be placed in.
     :return:
     '''
 
     # get prediction percentages
     image_predictions = []
-    for url,species in testing_image_urls:
+    for url,species, lat, long in testing_image_urls:
         try:
             results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
@@ -90,7 +90,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
             percentage = 'NA'
 
         print(percentage)
-        image_predictions.append([url, species, percentage])
+        image_predictions.append([url, species, percentage, lat, long])
 
     # get in ascending order of probability
     sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
@@ -99,13 +99,14 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # write new file with image urls and prediction percentages
     with open('predictions/'+file_name+'.csv', 'w') as myfile:
         wr = csv.writer(myfile, delimiter = ',')
+        wr.writerows([['url','source','prediction','lat','long']])
         wr.writerows(sorted_predictions)
 
     # write html file
     with open('predictions/'+file_name+'.html', 'w') as myfile:
         myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
         myfile.write('<tr><th>Image</th><th>Cane toad prob</th></tr>')
-        for url, species, percentage in sorted_predictions:
+        for url, species, percentage, lat, long in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
             myfile.write("<td>"+species+"</td>")
@@ -123,4 +124,4 @@ def predict_from_csv():
     with open('predictions/binaryAll.csv', 'r') as myfile:
         for url in myfile:
             url, species = url.split(',')
-            testing_image_urls.append([url, species])
+            testing_image_urls.append([url, species, 'NA', 'NA'])
