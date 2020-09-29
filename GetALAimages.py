@@ -18,6 +18,8 @@ def listOfAlaImageUrls(file_dir):
     which sends a link to your email.
     This image url is then put into the form https://images.ala.org.au/store/b/8/a/0/d6ea9ad8-0293-4144-b40e-9087eb400a8b/original
     where the first 4 digits are the reverse of the last 4 digits from the giant 'url'
+    The other columns in this file relate to quality test warnings: which are true if it is a warning (this could be used
+    to give a value of quality of data)
     :param file_dir: directory of raw csv file downloaded from ALA
     :return: list of urls
     '''

@@ -8,6 +8,7 @@ from PIL import Image
 import urllib
 from io import BytesIO
 import math
+from preCrop import cropImage
 
 
 import os, ssl
@@ -15,11 +16,13 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
-ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
+# setting up project using keys
+ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
 
-training_key = "cde7deba2d5d4df5b768b50b700c46b7"
-prediction_key = "fb49a542a16a47e6b68b2983db158c32"
-prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
+# using nic
+training_key = "af562773faaa490eb5028a14ded3b8cc"
+prediction_key = "8043e5cca5634caaab92697bf568942d"
+prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -27,9 +30,9 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'Cane Toad Classifier Binary':
+    if project.name == 'all':
         break
-publish_iteration_name = "AllImages"
+publish_iteration_name = "Iteration1"
 
 
 # Now there is a trained endpoint that can be used to make a prediction
@@ -38,12 +41,23 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 
 
+def predictFromImageFile(open_image):
+    # convert back to byte object for classify_image
+    imgByteArr = BytesIO()
+    open_image.save(imgByteArr, format='PNG')
+    imgByteArr = imgByteArr.getvalue()
+
+    results = predictor.classify_image(project.id, publish_iteration_name, imgByteArr)
+    return results
+
+
+
 
 def predictFromImageUrl(testing_image_urls, file_name):
     '''
     Takes a list of image urls, and saves a csv and html file giving the probability of each photo being a cane toad
-    :param testing_image_urls: a list of image urls, where each element in the list is a list of 4 elements; the
-    url, the label/description of the image, and the latitude and longitude
+    :param testing_image_urls: a list of image urls, where each element in the list is a list of 5 elements; the
+    url, the label/description of the image, the latitude and longitude, and the date
     :param file_name: directory for csv and html file to be placed in.
     :return:
     '''
@@ -51,45 +65,63 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # get prediction percentages
     image_predictions = []
     for url,species, lat, long, date in testing_image_urls:
-        try:
-            results = predictor.classify_image_url(project.id, publish_iteration_name, url)
+        # initialise list of probabilities for each test
+        percentages = [-1]
 
-        # not sure what exception should be as custom vision gives a strange error.
-        except:
-            print('too large')
+        # first using google cloud to crop image into regions of interest:
+        sections = cropImage(url)
+        if len(sections)>0:
+            for crop in sections:
+                # if cane toad identified, break out of loop
+                if max(percentages)>0.95:
+                    break
+                results = predictFromImageFile(crop)
+                for tag in results.predictions:
+                    if tag.tag_name == 'cane toad':
+                        percentages.append(tag.probability)
+
+
+
+        # if cane toad still not identified try whole photo
+        if max(percentages) < 0.95:
             try:
-                # if images are too large for prediction (must be <4mb), use python to scale down
-                img = urllib.request.urlopen(url)
-                img = Image.open(img)
+                results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
-                # resize
-                height,width = img.size
-                currentSize = len(img.fp.read())
-                # these numbers could probably be better
-                maxDim = math.floor(max([width,height]) * 4194304 / currentSize / 3)
-                img.thumbnail((maxDim, maxDim))
+            # not sure what exception should be as custom vision gives a strange error.
+            except:
+                print('too large')
+                try:
+                    # if images are too large for prediction (must be <4mb), use python to scale down
+                    img = urllib.request.urlopen(url)
+                    img = Image.open(img)
+
+                    # resize
+                    height,width = img.size
+                    currentSize = len(img.fp.read())
+                    # these numbers could probably be better
+                    maxDim = math.floor(max([width,height]) * 4194304 / currentSize / 3)
+                    img.thumbnail((maxDim, maxDim))
+
+                    results = predictFromImageFile(img)
 
 
-                # convert back to byte object for classify_image
-                imgByteArr = BytesIO()
-                img.save(imgByteArr, format='PNG')
-                imgByteArr = imgByteArr.getvalue()
+                # if image actually doesn't exist
+                except OSError:
+                    results = None
 
-                results = predictor.classify_image(project.id, publish_iteration_name, imgByteArr)
+                else:
+                    for tag in results.predictions:
+                        if tag.tag_name == 'cane toad':
+                            percentages.append(tag.probability)
+            else:
+                for tag in results.predictions:
+                    if tag.tag_name == 'cane toad':
+                        percentages.append(tag.probability)
 
-            # if image actually doesn't exist
-            except OSError:
-                pass
+        image_predictions.append([url, species, max(percentages), lat, long, date])
 
-        if results is not None:
-            for tag in results.predictions:
-                if tag.tag_name == 'cane toad':
-                    percentage = tag.probability
-        else:
-            percentage = 'NA'
 
-        print(percentage)
-        image_predictions.append([url, species, percentage, lat, long, date])
+
 
     # get in ascending order of probability
     sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])

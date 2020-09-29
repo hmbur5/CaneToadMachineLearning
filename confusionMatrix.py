@@ -47,11 +47,12 @@ def predict(image_url, iteration_number):
         except OSError:
             pass
 
-    if results is not None:
+    try:
         for tag in results.predictions:
             if tag.tag_name == 'cane toad':
                 percentage = tag.probability
-    else:
+    # if image doesn't exist, results are not defined
+    except UnboundLocalError:
         percentage = 'NA'
 
     return percentage
@@ -61,13 +62,11 @@ def predict(image_url, iteration_number):
 
 # setting up project using keys
 
-ENDPOINT = "https://canetoad-prediction.cognitiveservices.azure.com/"
+ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-# using hmbur5@student.monash.edu
-training_key = "567bc1a3b9d4479283887d68c1d7f46c"
-prediction_key = "6b9d10b6c8bc42878d92fe94213256a1"
-prediction_resource_id = "/subscriptions/d0bdc746-b59f-4a0c-b651-9865282bcd1a/resourceGroups/CaneToadMachineLearning/providers/Microsoft.CognitiveServices/accounts/CaneToad-Prediction"
-
+training_key = "cde7deba2d5d4df5b768b50b700c46b7"
+prediction_key = "fb49a542a16a47e6b68b2983db158c32"
+prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -75,10 +74,9 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'all':
+    if project.name == 'iterative':
         break
-# iteration name must be changed each iteration to publish
-publish_iteration_name = "1"
+publish_iteration_name = "Iteration1.8"
 
 # Now there is a trained endpoint that can be used to make a prediction
 prediction_credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
@@ -98,20 +96,16 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
                 'longFootedFrog', 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
                 'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog']:
 
-    if species=='caneToad' or species =='questionCaneToad':
+    if species=='caneToad':
         tag_name = species
     else:
         tag_name = 'otherFrog'
 
-
-    if species =='caneToad':
-        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
-        CtestingURLS = image_url_list
-    elif species=='questionableCaneToad':
-        image_url_list = GetALAimages.listOfCheckedImages('ala image urls/confirmedNotCaneToads.csv')
+    file_dir = 'ala image urls/' + species + 'RawFile.csv'
+    image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+    if species=='caneToad':
+        CtestingURLS += image_url_list
     else:
-        file_dir = 'ala image urls/' + species + 'RawFile.csv'
-        image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
         NtestingURLS += image_url_list
 
 
@@ -119,10 +113,10 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
 CcontrolURLS = []
 NcontrolURLS = []
 
-for i in range(0,50)*np.floor(len(CtestingURLS)/50):
+for i in range(0,50)*np.floor(len(CtestingURLS)/51):
     CcontrolURLS.append(CtestingURLS[int(i)])
     CtestingURLS.remove(CtestingURLS[int(i)])
-for i in range(0,50)*np.floor(len(NtestingURLS)/50):
+for i in range(0,50)*np.floor(len(NtestingURLS)/51):
     NcontrolURLS.append(NtestingURLS[int(i)])
     NtestingURLS.remove(NtestingURLS[int(i)])
 
@@ -130,9 +124,9 @@ for i in range(0,50)*np.floor(len(NtestingURLS)/50):
 # create CSV file
 test_urls = []
 for url in CcontrolURLS:
-    test_urls.append([url, 'ala cane toad'])
+    test_urls.append([url, 'ala cane toad', 'na','na','na'])
 for url in NcontrolURLS:
-    test_urls.append([url, 'ala other frog'])
+    test_urls.append([url, 'ala other frog', 'na','na','na'])
 predictFromImageUrl(test_urls, 'all_controlled')
 
 
@@ -140,13 +134,18 @@ predictFromImageUrl(test_urls, 'all_controlled')
 Ccorrect = 0
 Ncorrect = 0
 for control in CcontrolURLS:
-    #print(predict(control, 'Iteration15'))
-    if predict(control, 'Iteration1')>0.90:
-        Ccorrect+=1
+    try:
+        if predict(control, 'Iteration1.10')>0.90:
+            Ccorrect+=1
+    except TypeError:
+        CcontrolURLS.remove(control)
+
 for control in NcontrolURLS:
-    #print(predict(control, 'Iteration15'))
-    if predict(control, 'Iteration1')<0.90:
-        Ncorrect+=1
+    try:
+        if predict(control, 'Iteration1.10')<0.90:
+            Ncorrect+=1
+    except TypeError:
+        NcontrolURLS.remove(control)
 
 print(len(CcontrolURLS))
 print(Ccorrect)

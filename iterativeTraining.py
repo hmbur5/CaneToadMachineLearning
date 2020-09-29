@@ -157,7 +157,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'iterative':
+    if project.name == 'iterative neg':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -168,9 +168,9 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 
 # clear existing training images
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
-time.sleep(1)
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#time.sleep(1)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
 #exit(-1)
 
 # training with image urls
