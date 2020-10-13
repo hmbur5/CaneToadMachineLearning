@@ -156,9 +156,9 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 
 # clear existing training images
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
-time.sleep(1)
-trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#time.sleep(1)
+#trainer.delete_images(project.id, all_images=True, all_iterations=True)
 #exit(-1)
 
 # training with image urls

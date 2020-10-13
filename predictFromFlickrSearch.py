@@ -28,3 +28,23 @@ for search in searchQueries:
             photoUrls.append([element['url_t'], 'flickr_' + search, element['latitude'], element['longitude'], element['datetaken']])
 
     predictFromImageUrl(photoUrls, 'flickr_'+search)
+
+
+
+    exit(-1)
+    # creating histogram of tags from flickr
+    import matplotlib.pyplot as plt
+    from preCrop import cropImage
+    import numpy as np
+    tagsList = []
+    for photo in photoUrls:
+        image_url = photo[0]
+        crops, tags = cropImage(image_url)
+        tagsList+=tags
+    labels, counts = np.unique(tagsList, return_counts=True)
+    sorted_indices = np.argsort(-counts)
+    ticks = range(len(counts[sorted_indices]))
+    plt.bar(ticks, counts[sorted_indices], align='center')
+    plt.xticks(ticks, labels[sorted_indices], rotation='vertical')
+    plt.show()
+

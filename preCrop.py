@@ -75,7 +75,7 @@ def cropImage(url, return_coords=False):
 
 
 
-def caneToadTags():
+def caneToadTagsHistogram():
     import GetALAimages
     import numpy as np
     import matplotlib.pyplot as plt
@@ -94,6 +94,6 @@ def caneToadTags():
 
 
 if __name__ == "__main__":
-    caneToadTags()
+    caneToadTagsHistogram()
 
 
