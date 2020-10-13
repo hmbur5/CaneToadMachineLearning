@@ -15,7 +15,7 @@ from io import BytesIO
 client = vision.ImageAnnotatorClient()
 
 
-def cropImage(url, return_coords=False):
+def cropImage(url, return_coords=False, checkTags=['Frog']):
     '''
     creates a list of images of the regions of the given image that are identified to
     be a frog or animal based on google cloud
@@ -37,7 +37,7 @@ def cropImage(url, return_coords=False):
 
     for tag in response.localized_object_annotations:
         # some crops that might be cane toads or other frogs
-        if tag.name in ['Frog','Animal','Insect']:
+        if tag.name in checkTags:
             vertices= tag.bounding_poly.normalized_vertices
             im = urllib.request.urlopen(url)
             im = Image.open(im)

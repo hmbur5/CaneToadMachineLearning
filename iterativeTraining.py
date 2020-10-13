@@ -15,8 +15,16 @@ from preCrop import cropImage
 
 
 
+def frogTag(image_url_list):
+    # create list of cropped regions of frogs or animals from google vision
+    image_cropped_list = []
+    for image_url in image_url_list:
+        crops, tags = cropImage(image_url)
+        image_cropped_list+=crops
+    return image_cropped_list
 
-def addImages(image_url_list, tag_name):
+
+def addImages(image_cropped_list, tag_name):
 
     # find tag to add images to
     for tag in trainer.get_tags(project.id):
@@ -25,12 +33,6 @@ def addImages(image_url_list, tag_name):
     if tag.name!= tag_name:
         raise Exception('Tag name does not exist')
 
-
-    # create list of cropped regions of frogs or animals from google vision
-    image_cropped_list = []
-    for image_url in image_url_list:
-        crops, tags = cropImage(image_url)
-        image_cropped_list+=crops
 
 
     # going through a small portion of url list as can only upload 64 at a time
@@ -197,18 +199,16 @@ for i in range(0,50)*np.floor(len(NtestingURLS)/51):
 
 
 
-# for all
-addImages(CtestingURLS, 'cane toad')
-addImages(NtestingURLS, 'other frog')
+# start by adding all images that come up as frogs.
+addImages(frogTag(CtestingURLS), 'cane toad')
+addImages(frogTag(NtestingURLS), 'other frog')
 exit(-1)
 
 
-
-# for iterative
-# add 100 of each N and C into training data, using only verified cane toad images
-checkedCaneToads = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
-CtrainingURLS = np.random.choice(checkedCaneToads, 100, replace=False)
-NtrainingURLS = np.random.choice(NtestingURLS, 100, replace=False)
+# iteratively build up model of photos that don't get a frog tag from google, checking before adding them to training
+# set if they are predicted less than 0.95 cane toad
+# we could add all the other frog images here as they don't really need verifying or cropping, but we want to keep the
+# number of photos balanced
 
 
 # now refine
