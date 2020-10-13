@@ -1,4 +1,5 @@
 import os, ssl
+import math
 import io
 import urllib
 from PIL import Image
@@ -9,15 +10,19 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
 # Imports the Google Cloud client library
 from google.cloud import vision
 from google.cloud.vision import types
+from io import BytesIO
 # Instantiates a client
 client = vision.ImageAnnotatorClient()
 
 
-def cropImage(url):
+def cropImage(url, return_coords=False):
     '''
-    returns a list of images of the regions of the given image that are identified to be a frog or animal based on google cloud
+    creates a list of images of the regions of the given image that are identified to
+    be a frog or animal based on google cloud
     :param url: image url
-    :return:
+    :param return_coords: boolean if coordinates of cropped images are desired
+    :return: crops: list of cropped images (a tuple of image and coordinates if desired, coordanites in the form: x1, y1, x2, y2, aspect_ratio as floats)
+    :return: tagNames: list of strings corresponding to tag names found in each image url
     '''
 
     source = types.ImageSource(image_uri=url)
@@ -28,10 +33,11 @@ def cropImage(url):
     response = client.object_localization(image=image)
 
     crops = []
+    tagNames = []
 
     for tag in response.localized_object_annotations:
-        # some crops that might be cane toads
-        if tag.name in ['Frog', 'Animal', 'Insect', 'Lizard', 'Snake', 'Moths and butterflies', 'Turtle']:
+        # some crops that might be cane toads or other frogs
+        if tag.name in ['Frog','Animal','Insect']:
             vertices= tag.bounding_poly.normalized_vertices
             im = urllib.request.urlopen(url)
             im = Image.open(im)
@@ -40,19 +46,54 @@ def cropImage(url):
                            vertices[2].x*im.size[0], vertices[2].y*im.size[1]])
 
             #im2.show()
-            crops.append(im2)
+
+            # if cropped image too large for training/prediction, scaled down
+            height, width = im2.size
+            # convert to byte object to get size
+            imgByteArr = BytesIO()
+            im2.save(imgByteArr, format='PNG')
+            imgByteArr = imgByteArr.getvalue()
+            currentSize = len(imgByteArr)
+            if currentSize > 10000000:
+                # resize
+                maxDim = math.floor(max([width, height]) * 4194304 / currentSize / 4)
+                im2.thumbnail((maxDim, maxDim))
+
+            if return_coords:
+                crops.append((im2,[vertices[0].x, vertices[0].y,
+                           vertices[2].x, vertices[2].y, im.size[0]/im.size[1]]))
+            else:
+                crops.append(im2)
 
         else:
             print(tag.name)
+        tagNames.append(tag.name)
 
-    return(crops)
+    return(crops, tagNames)
 
 
 
 
-#crops = cropImage('https://live.staticflickr.com/8444/7994805572_42f1d484b0_c.jpg')
-#for image in crops:
-#    image.show()
 
+def caneToadTags():
+    import GetALAimages
+    import numpy as np
+    import matplotlib.pyplot as plt
+    file_dir = 'ala image urls/caneToadRawFile.csv'
+    image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
+    tagsList = []
+    for image_url in image_url_list:
+        crops, tags = cropImage(image_url)
+        tagsList+=tags
+    labels, counts = np.unique(tagsList, return_counts=True)
+    sorted_indices = np.argsort(-counts)
+    ticks = range(len(counts[sorted_indices]))
+    plt.bar(ticks, counts[sorted_indices], align='center')
+    plt.xticks(ticks, labels[sorted_indices], rotation='vertical')
+    plt.show()
+
+
+if __name__ == "__main__":
+    caneToadTags()
 
 

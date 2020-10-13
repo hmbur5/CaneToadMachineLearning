@@ -9,6 +9,7 @@ import urllib
 from io import BytesIO
 import math
 from preCrop import cropImage
+import numpy as np
 
 
 import os, ssl
@@ -65,13 +66,14 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # get prediction percentages
     image_predictions = []
     for url,species, lat, long, date in testing_image_urls:
-        # initialise list of probabilities for each test
+        # initialise list of probabilities for each test and the corresponding image
         percentages = [-1]
+        image_coords = [None]
 
         # first using google cloud to crop image into regions of interest:
-        sections = cropImage(url)
+        sections, tags = cropImage(url, return_coords=True)
         if len(sections)>0:
-            for crop in sections:
+            for crop,coords in sections:
                 # if cane toad identified, break out of loop
                 if max(percentages)>0.95:
                     break
@@ -79,6 +81,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
                 for tag in results.predictions:
                     if tag.tag_name == 'cane toad':
                         percentages.append(tag.probability)
+                        image_coords.append(coords)
 
 
 
@@ -113,33 +116,60 @@ def predictFromImageUrl(testing_image_urls, file_name):
                     for tag in results.predictions:
                         if tag.tag_name == 'cane toad':
                             percentages.append(tag.probability)
+                            # coordinates corresponding to whole image
+                            image_coords.append(None)
             else:
                 for tag in results.predictions:
                     if tag.tag_name == 'cane toad':
                         percentages.append(tag.probability)
+                        # coordinates corresponding to whole image
+                        image_coords.append(None)
 
-        image_predictions.append([url, species, max(percentages), lat, long, date])
+        # get image or crop corresponding to highest probability
+        coords = image_coords[np.argmax(percentages)]
+
+        image_predictions.append([url, coords, species, max(percentages), lat, long, date])
 
 
 
 
     # get in ascending order of probability
-    sorted_predictions = sorted(image_predictions, key=lambda tup: tup[2])
+    #sorted_predictions = sorted(image_predictions, key=lambda tup: tup[3])
+    # not sorting for now
+    sorted_predictions=image_predictions
 
 
     # write new file with image urls and prediction percentages
     with open('predictions/'+file_name+'.csv', 'w') as myfile:
         wr = csv.writer(myfile, delimiter = ',')
-        wr.writerows([['url','source','prediction','lat','long','date']])
+        wr.writerows([['url','crop','source','prediction','lat','long','date']])
         wr.writerows(sorted_predictions)
 
     # write html file
     with open('predictions/'+file_name+'.html', 'w') as myfile:
         myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
-        myfile.write('<tr><th>Image</th><th>Cane toad prob</th></tr>')
-        for url, species, percentage, lat, long, date in sorted_predictions:
+        myfile.write('<tr><th>Image</th><th>Crop</th><th>Source</th><th>Cane toad prob</th></tr>')
+        for url, coords, species, percentage, lat, long, date in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
+
+            # crop image if needed
+            if coords:
+                x1, y1, x2, y2, ratio = coords
+                height = (y2-y1)/(x2-x1)*250/ratio
+                outsideWidth = 250/(x2-x1)
+                marginLeft = x1*outsideWidth
+                outsideHeight = height/(y2-y1)
+                marginTop = y1*outsideHeight
+                string = '<div style="width:250px; height:'+str(height)+'px; overflow: hidden; position: relative;"><img src="'\
+                         +url+'" style = "width:'+str(outsideWidth)+'px; height:'+str(outsideHeight)+'px; margin-left:-'+str(marginLeft)\
+                         +'px; margin-top:-'+str(marginTop)+'px; position: absolute">'
+                string += '</div>'
+
+                myfile.write("<td>"+string+"</td>")
+            else:
+                myfile.write("<td><img src='" + url + "' width='250' alt=''/></td>")
+
             myfile.write("<td>"+species+"</td>")
             myfile.write("<td>"+str(percentage)+"</td>")
             myfile.write('</tr>')

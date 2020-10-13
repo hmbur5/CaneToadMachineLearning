@@ -11,6 +11,7 @@ from PIL import Image
 import urllib
 from io import BytesIO
 import math
+from preCrop import cropImage
 
 
 
@@ -25,20 +26,30 @@ def addImages(image_url_list, tag_name):
         raise Exception('Tag name does not exist')
 
 
+    # create list of cropped regions of frogs or animals from google vision
+    image_cropped_list = []
+    for image_url in image_url_list:
+        crops, tags = cropImage(image_url)
+        image_cropped_list+=crops
+
+
     # going through a small portion of url list as can only upload 64 at a time
-    for batch_number in range(math.ceil(len(image_url_list)/64)):
+    for batch_number in range(math.ceil(len(image_cropped_list)/64)):
         print(batch_number)
 
         image_list = []
         endIndex = (batch_number+1)*64
-        if endIndex > len(image_url_list):
-            endIndex = len(image_url_list)
-        for url in image_url_list[batch_number*64: endIndex]:
-            image_list.append(ImageUrlCreateEntry(url=url, tag_ids=[tag.id]))
+        if endIndex > len(image_cropped_list):
+            endIndex = len(image_cropped_list)
+        for cropped_image in image_cropped_list[batch_number*64: endIndex]:
+            imgByteArr = BytesIO()
+            cropped_image.save(imgByteArr, format='PNG')
+            cropped_image = imgByteArr.getvalue()
+            image_list.append(ImageFileCreateEntry(contents=cropped_image, tag_ids=[tag.id]))
 
         # check that there are some images to upload, then upload these
         if len(image_list) > 0:
-            upload_result = trainer.create_images_from_urls(project.id, ImageUrlCreateBatch(images=image_list))
+            upload_result = trainer.create_images_from_files(project.id, ImageUrlCreateBatch(images=image_list))
 
             # gives error when there is a duplicate (which is possible with the ALA data) so code below is to ignore
             # duplicate error.
@@ -47,36 +58,11 @@ def addImages(image_url_list, tag_name):
                 for image in upload_result.images:
                     if image.status == 'OK':
                         # add to new new image_list with corresponding url and tag
-                        image_list.append(ImageUrlCreateEntry(url=image.source_url, tag_ids=[tag.id]))
+                        image_list.append(ImageFileCreateEntry(contents=cropped_image, tag_ids=[tag.id]))
                     elif image.status != 'OKDuplicate':
-                        print('resizing')
-                        try:
-                            # if images are too large for prediction (must be <4mb), use python to scale down
-                            img = urllib.request.urlopen(image.source_url)
-                            img = Image.open(img)
-
-                            # resize
-                            height, width = img.size
-                            currentSize = len(img.fp.read())
-                            # these numbers could probably be better
-                            maxDim = math.floor(max([width, height]) * 4194304 / currentSize / 4)
-                            img.thumbnail((maxDim, maxDim))
-
-                            # convert back to byte object for classify_image
-                            imgByteArr = BytesIO()
-                            img.save(imgByteArr, format='PNG')
-                            imgByteArr = imgByteArr.getvalue()
-
-                            image_file_list = [ImageFileCreateEntry(name=image.source_url, contents=imgByteArr,
-                                                                    tag_ids=[tag.id])]
-
-                            trainer.create_images_from_files(project.id, ImageUrlCreateBatch(images=image_file_list))
-
-                        # if image actually doesn't exist
-                        except OSError:
                             print(image.source_url)
                 if len(image_list)>0:
-                    upload_result = trainer.create_images_from_urls(project.id, ImageFileCreateBatch(images=image_list))
+                    upload_result = trainer.create_images_from_files(project.id, ImageUrlCreateBatch(images=image_list))
                 else:
                     break
 
@@ -145,11 +131,13 @@ def predict(image_url, iteration_name):
 
 
 # setting up project using keys
-ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
+ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
 
-training_key = "cde7deba2d5d4df5b768b50b700c46b7"
-prediction_key = "fb49a542a16a47e6b68b2983db158c32"
-prediction_resource_id = "/subscriptions/baa59b08-5ec4-44ea-a907-b12782d8e2a0/resourceGroups/Canetoads/providers/Microsoft.CognitiveServices/accounts/CaneToadMachineLea-Prediction"
+# using nic
+training_key = "af562773faaa490eb5028a14ded3b8cc"
+prediction_key = "8043e5cca5634caaab92697bf568942d"
+prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
+
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -157,7 +145,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'iterative neg':
+    if project.name == 'all':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -168,9 +156,9 @@ predictor = CustomVisionPredictionClient(ENDPOINT, prediction_credentials)
 
 
 # clear existing training images
-#trainer.delete_images(project.id, all_images=True, all_iterations=True)
-#time.sleep(1)
-#trainer.delete_images(project.id, all_images=True, all_iterations=True)
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
+time.sleep(1)
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
 #exit(-1)
 
 # training with image urls
@@ -209,11 +197,18 @@ for i in range(0,50)*np.floor(len(NtestingURLS)/51):
 
 
 
+# for all
+addImages(CtestingURLS, 'cane toad')
+addImages(NtestingURLS, 'other frog')
+exit(-1)
+
+
+
+# for iterative
 # add 100 of each N and C into training data, using only verified cane toad images
 checkedCaneToads = GetALAimages.listOfCheckedImages('ala image urls/confirmedCaneToads.csv')
 CtrainingURLS = np.random.choice(checkedCaneToads, 100, replace=False)
 NtrainingURLS = np.random.choice(NtestingURLS, 100, replace=False)
-
 
 
 # now refine
