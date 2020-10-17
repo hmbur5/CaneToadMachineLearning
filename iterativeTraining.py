@@ -15,12 +15,14 @@ from preCrop import cropImage
 
 
 
-def frogTag(image_url_list):
+def tag(image_url_list, name):
     # create list of cropped regions of frogs or animals from google vision
     image_cropped_list = []
     for image_url in image_url_list:
-        crops, tags = cropImage(image_url)
+        crops, tags = cropImage(image_url, checkTags=[name])
         image_cropped_list+=crops
+        if len(image_cropped_list)>50:
+            return image_cropped_list
     return image_cropped_list
 
 
@@ -88,15 +90,20 @@ def train(iteration_name):
     print("Done!")
 
 
-def predict(image_url, iteration_name):
+def predict(image_file, iteration_name):
     print(iteration_name)
 
     # get prediction percentages
     try:
-        results = predictor.classify_image_url(project.id, iteration_name, image_url)
+        imgByteArr = BytesIO()
+        image_file.save(imgByteArr, format='PNG')
+        imgByteArr = imgByteArr.getvalue()
+        results = predictor.classify_image(project.id,iteration_name, imgByteArr)
 
     # not sure what exception should be as custom vision gives a strange error.
     except:
+        pass
+        '''
         print('resizing')
         try:
             # if images are too large for prediction (must be <4mb), use python to scale down
@@ -121,6 +128,7 @@ def predict(image_url, iteration_name):
         # if image actually doesn't exist
         except OSError:
             pass
+        '''
 
     try:
         for tag in results.predictions:
@@ -169,10 +177,8 @@ print("Adding images...")
 
 
 # split labelled data into tuples of training and testing (C for cane toad, N for not)
-CtrainingURLS = []
-CtestingURLS = []
-NtrainingURLS = []
-NtestingURLS = []
+CalaURLS = []
+NalaURLS = []
 # getting image urls using ALA file for each species (iterative as we can only upload 64 images at a time)
 for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australianGreenTreeFrog', 'bumpyRockFrog',
                 'crawlingToadlet', 'daintyGreenTreeFrog', 'desertFroglet', 'desertTreeFrog', 'giantFrog', 'hootingFrog',
@@ -183,26 +189,26 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
     file_dir = 'ala image urls/' + species + 'RawFile.csv'
     image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
     if species=='caneToad':
-        CtestingURLS += image_url_list
+        CalaURLS += image_url_list
     else:
-        NtestingURLS += image_url_list
+        NalaURLS += image_url_list
 
 # build a control for testing afterwards
 CcontrolURLS = []
 NcontrolURLS = []
-for i in range(0,50)*np.floor(len(CtestingURLS)/51):
-    CcontrolURLS.append(CtestingURLS[int(i)])
-    CtestingURLS.remove(CtestingURLS[int(i)])
-for i in range(0,50)*np.floor(len(NtestingURLS)/51):
-    NcontrolURLS.append(NtestingURLS[int(i)])
-    NtestingURLS.remove(NtestingURLS[int(i)])
+for i in range(0,50)*np.floor(len(CalaURLS)/51):
+    CcontrolURLS.append(CalaURLS[int(i)])
+    CalaURLS.remove(CalaURLS[int(i)])
+for i in range(0,50)*np.floor(len(NalaURLS)/51):
+    NcontrolURLS.append(NalaURLS[int(i)])
+    NalaURLS.remove(NalaURLS[int(i)])
 
 
 
 # start by adding all images that come up as frogs.
-addImages(frogTag(CtestingURLS), 'cane toad')
-addImages(frogTag(NtestingURLS), 'other frog')
-exit(-1)
+#addImages(tag(CalaURLS, 'Frog'), 'cane toad')
+#addImages(tag(NalaURLS, 'Frog'), 'other frog')
+#exit(-1)
 
 
 # iteratively build up model of photos that don't get a frog tag from google, checking before adding them to training
@@ -210,22 +216,22 @@ exit(-1)
 # we could add all the other frog images here as they don't really need verifying or cropping, but we want to keep the
 # number of photos balanced
 
+CtestingURLS = tag(CalaURLS, 'Animal')
+NtestingURLS = tag(NalaURLS, 'Animal')
+
 
 # now refine
 iteration = 1
 
 while len(CtestingURLS)>0:
-    addImages(CtrainingURLS, 'cane toad')
-    addImages(NtrainingURLS, 'other frog')
 
-    train(iteration_name='Iteration1.' + str(iteration))
-
+    print(iteration)
 
     CtrainingURLS = []
     NtrainingURLS = []
     # test on cane toad images, and unless 95% sure these are cane toads, we check the photo before adding to training
     # (as some ala images contain tadpoles and skeletons)
-    for image_url in np.random.choice(CtestingURLS, 100, replace=False):
+    for image_url in CtestingURLS[0:50]:
         # if it doesn't classify as cane toad, add to training data
         prediction = predict(image_url, 'Iteration1.'+str(iteration))
         print(prediction)
@@ -246,12 +252,17 @@ while len(CtestingURLS)>0:
             CtrainingURLS.append(image_url)
             CtestingURLS.remove(image_url)
 
-    for image_url in np.random.choice(NtestingURLS, 100, replace=False):
+    for image_url in NtestingURLS[0:50]:
         # add to training and remove from testing
         NtrainingURLS.append(image_url)
         NtestingURLS.remove(image_url)
 
+    addImages(CtrainingURLS, 'cane toad')
+    addImages(NtrainingURLS, 'other frog')
+
     iteration+=1
+    train(iteration_name='Iteration1.' + str(iteration))
+
 
 
 

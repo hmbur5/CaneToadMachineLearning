@@ -108,7 +108,7 @@ def press(event, image_url, plt):
 
 
 
-def manualConfirmationOfTest(image_url):
+def manualConfirmationOfTest(image):
     global manualConfirm
     '''
     Function to open an image, and wait for key press C or N to return True if user decides it is a cane toad, and
@@ -117,16 +117,16 @@ def manualConfirmationOfTest(image_url):
     :param image_url: image urls
     '''
     # print each image and wait for key press
-    image = io.imread(image_url)
+    #image = io.imread(image_url)
     fig, ax = plt.subplots()
     ax.imshow(image)
     ax.set_title('c for cane toad, n for not cane toad')
     # calls function press when key is pressed
-    fig.canvas.mpl_connect('key_press_event', lambda event: pressTest(event, image_url, plt))
+    fig.canvas.mpl_connect('key_press_event', lambda event: pressTest(event, plt))
     plt.show()
     return manualConfirm
 
-def pressTest(event, image_url, plt):
+def pressTest(event, plt):
     global manualConfirm
     sys.stdout.flush()
     if event.key == 'c':

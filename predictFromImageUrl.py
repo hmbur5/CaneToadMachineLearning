@@ -33,7 +33,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 for project in trainer.get_projects():
     if project.name == 'all':
         break
-publish_iteration_name = "Iteration1"
+publish_iteration_name = "Iteration1.1"
 
 
 # Now there is a trained endpoint that can be used to make a prediction
@@ -134,9 +134,9 @@ def predictFromImageUrl(testing_image_urls, file_name):
 
 
     # get in ascending order of probability
-    #sorted_predictions = sorted(image_predictions, key=lambda tup: tup[3])
+    sorted_predictions = sorted(image_predictions, key=lambda tup: tup[3])
     # not sorting for now
-    sorted_predictions=image_predictions
+    #sorted_predictions=image_predictions
 
 
     # write new file with image urls and prediction percentages

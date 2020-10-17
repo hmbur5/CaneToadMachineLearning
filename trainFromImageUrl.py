@@ -10,12 +10,14 @@ import csv
 
 # setting up project using keys
 
-ENDPOINT = "https://canetoadmachinelearning.cognitiveservices.azure.com/"
 
-# using hmbur5@student.monash.edu
-training_key = "d7ad3915f5d649bab3a37981753ebd28"
-prediction_key = "e50cdc3b9f2a4e9cb67a1ccc2e6e5f5b"
-prediction_resource_id = "/subscriptions/6ac046c3-c689-49cd-82f5-e75510d7022f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadsTraining"
+# setting up project using keys
+ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
+
+# using nic
+training_key = "af562773faaa490eb5028a14ded3b8cc"
+prediction_key = "8043e5cca5634caaab92697bf568942d"
+prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -23,7 +25,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'test':
+    if project.name == 'detection':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -31,7 +33,8 @@ publish_iteration_name = "classify_model_basic"
 
 
 # clear existing training images
-#trainer.delete_images(project.id, all_images=True, all_iterations=True)
+trainer.delete_images(project.id, all_images=True, all_iterations=True)
+#exit(-1)
 
 # training with image urls
 print("Adding images...")
@@ -43,20 +46,14 @@ test_list = []
 for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australianGreenTreeFrog', 'bumpyRockFrog',
                 'crawlingToadlet', 'daintyGreenTreeFrog', 'desertFroglet', 'desertTreeFrog', 'giantFrog', 'hootingFrog',
                 'longFootedFrog', 'marbledFrog', 'moaningFrog', 'motorbikeFrog', 'newHollandFrog', 'rockholeFrog',
-                'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog', 'questionableCaneToad']:
+                'rothsTreeFrog', 'westernBanjoFrog', 'whiteLippedTreeFrog']:
 
-    # finding tag id
     for tag in trainer.get_tags(project.id):
-        if species=='caneToad':
-            if tag.name == 'cane toad':
-                break
-        elif species=='questionableCaneToad':
-            if tag.name == 'questionable cane toad':
-                break
-        else:
-            # replacing species tag with Negative for non-cane toads
-            if tag.name== 'not cane toad':
-                break
+        if tag.name == species:
+            break
+    # finding tag id
+    if tag.name != species:
+        tag = trainer.create_tag(project.id, species)
 
 
 
@@ -73,9 +70,9 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
     for batch_number in range(math.ceil(len(image_url_list)/64)):
 
         # removing every third batch to reduce number of not cane toads, to get balanced data
-        if species!='caneToad' and species!='questionableCaneToad':
-            if batch_number%3==1:
-                break
+        #if species!='caneToad' and species!='questionableCaneToad':
+        #    if batch_number%3==1:
+        #        break
 
         image_list = []
         endIndex = (batch_number+1)*64

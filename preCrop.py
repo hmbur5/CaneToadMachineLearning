@@ -15,15 +15,16 @@ from io import BytesIO
 client = vision.ImageAnnotatorClient()
 
 
-def cropImage(url, return_coords=False, checkTags=['Frog']):
+def cropImage(url, return_coords=False, checkTags=False):
     '''
     creates a list of images of the regions of the given image that are identified to
-    be a frog or animal based on google cloud
+    be a frog (or animal etc) based on google cloud
     :param url: image url
     :param return_coords: boolean if coordinates of cropped images are desired
     :return: crops: list of cropped images (a tuple of image and coordinates if desired, coordanites in the form: x1, y1, x2, y2, aspect_ratio as floats)
     :return: tagNames: list of strings corresponding to tag names found in each image url
     '''
+
 
     source = types.ImageSource(image_uri=url)
 
@@ -37,7 +38,8 @@ def cropImage(url, return_coords=False, checkTags=['Frog']):
 
     for tag in response.localized_object_annotations:
         # some crops that might be cane toads or other frogs
-        if tag.name in checkTags:
+        if not checkTags or tag.name in checkTags:
+            print(tag.name)
             vertices= tag.bounding_poly.normalized_vertices
             im = urllib.request.urlopen(url)
             im = Image.open(im)
@@ -84,7 +86,7 @@ def caneToadTagsHistogram():
     tagsList = []
     for image_url in image_url_list:
         crops, tags = cropImage(image_url)
-        tagsList+=tags
+        tagsList += list(set(tags))
     labels, counts = np.unique(tagsList, return_counts=True)
     sorted_indices = np.argsort(-counts)
     ticks = range(len(counts[sorted_indices]))
