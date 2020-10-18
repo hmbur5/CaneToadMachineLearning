@@ -33,7 +33,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 for project in trainer.get_projects():
     if project.name == 'all':
         break
-publish_iteration_name = "Iteration1.1"
+publish_iteration_name = "Iteration6"
 
 
 # Now there is a trained endpoint that can be used to make a prediction
@@ -75,18 +75,18 @@ def predictFromImageUrl(testing_image_urls, file_name):
         if len(sections)>0:
             for crop,coords in sections:
                 # if cane toad identified, break out of loop
-                if max(percentages)>0.95:
-                    break
+                #if max(percentages)>0.95:
+                #    break
                 results = predictFromImageFile(crop)
                 for tag in results.predictions:
-                    if tag.tag_name == 'cane toad':
+                    if tag.tag_name == 'caneToad':
                         percentages.append(tag.probability)
                         image_coords.append(coords)
 
 
 
         # if cane toad still not identified try whole photo
-        if max(percentages) < 0.95:
+        if True: #max(percentages) < 0.95:
             try:
                 results = predictor.classify_image_url(project.id, publish_iteration_name, url)
 
@@ -114,29 +114,30 @@ def predictFromImageUrl(testing_image_urls, file_name):
 
                 else:
                     for tag in results.predictions:
-                        if tag.tag_name == 'cane toad':
+                        if tag.tag_name == 'caneToad':
                             percentages.append(tag.probability)
                             # coordinates corresponding to whole image
-                            image_coords.append(None)
+                            image_coords.append('NA')
             else:
                 for tag in results.predictions:
-                    if tag.tag_name == 'cane toad':
+                    if tag.tag_name == 'caneToad':
                         percentages.append(tag.probability)
                         # coordinates corresponding to whole image
-                        image_coords.append(None)
+                        image_coords.append('NA')
 
         # get image or crop corresponding to highest probability
         coords = image_coords[np.argmax(percentages)]
+        uncroppedProb = percentages[image_coords.index('NA')]
 
-        image_predictions.append([url, coords, species, max(percentages), lat, long, date])
+        image_predictions.append([url, coords, species, uncroppedProb, max(percentages), lat, long, date])
 
 
 
 
     # get in ascending order of probability
-    sorted_predictions = sorted(image_predictions, key=lambda tup: tup[3])
+    #sorted_predictions = sorted(image_predictions, key=lambda tup: tup[3])
     # not sorting for now
-    #sorted_predictions=image_predictions
+    sorted_predictions=image_predictions
 
 
     # write new file with image urls and prediction percentages
@@ -148,13 +149,13 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # write html file
     with open('predictions/'+file_name+'.html', 'w') as myfile:
         myfile.write('<!doctype html> <html> <head> <meta charset="UTF-8"> <title>Untitled Document</title> </head>  <body><table>')
-        myfile.write('<tr><th>Image</th><th>Crop</th><th>Source</th><th>Cane toad prob</th></tr>')
-        for url, coords, species, percentage, lat, long, date in sorted_predictions:
+        myfile.write('<tr><th>Image</th><th>Best crop</th><th>Source</th><th>Uncropped cane toad prob</th><th>Best cropped cane toad prob</th></tr>')
+        for url, coords, species, uncroppedProb, percentage, lat, long, date in sorted_predictions:
             myfile.write('<tr>')
             myfile.write("<td><img src='"+ url + "' width='250' alt=''/></td>")
 
             # crop image if needed
-            if coords:
+            if coords!='NA':
                 x1, y1, x2, y2, ratio = coords
                 height = (y2-y1)/(x2-x1)*250/ratio
                 outsideWidth = 250/(x2-x1)
@@ -171,6 +172,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
                 myfile.write("<td><img src='" + url + "' width='250' alt=''/></td>")
 
             myfile.write("<td>"+species+"</td>")
+            myfile.write("<td>"+str(uncroppedProb)+"</td>")
             myfile.write("<td>"+str(percentage)+"</td>")
             myfile.write('</tr>')
 

@@ -21,6 +21,7 @@ def cropImage(url, return_coords=False, checkTags=False):
     be a frog (or animal etc) based on google cloud
     :param url: image url
     :param return_coords: boolean if coordinates of cropped images are desired
+    :param checkTags: if given, a list of strings corresponding to accepted object tags to crop, otherwise it returns crops of all objects
     :return: crops: list of cropped images (a tuple of image and coordinates if desired, coordanites in the form: x1, y1, x2, y2, aspect_ratio as floats)
     :return: tagNames: list of strings corresponding to tag names found in each image url
     '''
