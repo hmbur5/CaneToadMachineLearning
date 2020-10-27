@@ -8,7 +8,7 @@ from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 
 
-def histogram(image_url_list):
+def histogram(image_url_list, source):
     print(len(image_url_list))
     tagsList = []
     for image_url in image_url_list:
@@ -20,11 +20,18 @@ def histogram(image_url_list):
         except TypeError:
             pass
     labels, counts = np.unique(tagsList, return_counts=True)
+    # crop to first 15 tags
     sorted_indices = np.argsort(-counts)
-    ticks = range(len(counts[sorted_indices]))
-    counts = counts/max(counts)
-    plt.bar(ticks, counts[sorted_indices], align='center')
-    plt.xticks(ticks, labels[sorted_indices], rotation='vertical')
+    counts = counts[sorted_indices]
+    labels = labels[sorted_indices]
+    counts = counts[0:25]
+    labels = labels[0:25]
+    ticks = range(len(counts))
+    # normalise to proportion of total number of images
+    counts = counts/len(image_url_list)
+    plt.bar(ticks, counts, align='center')
+    plt.xticks(ticks, labels, rotation='vertical')
+    plt.title(source)
     plt.show()
 
 if __name__ == '__main__':
@@ -51,19 +58,18 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    print(photoUrls)
-    histogram(photoUrls)
+    histogram(photoUrls, 'flickr')
     #exit(-1)
 
     #ala
     images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
-    histogram(images[0:500])
+    histogram(images[0:500],'ala')
 
 
     # inaturalist
     df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
     saved_column = list(df['image_url'])
-    histogram(saved_column[0:500])
+    histogram(saved_column[0:500], 'inaturalist')
 
 
     # instagram
@@ -80,7 +86,7 @@ if __name__ == '__main__':
             if count==500:
                 return urls
 
-    histogram(get_hashtags_posts('canetoad'))
+    histogram(get_hashtags_posts('canetoad'), 'instgram')
     #exit(-1)
 
 
@@ -91,7 +97,7 @@ if __name__ == '__main__':
     reddit_url_list = []
     for b in all.search("cane toads", limit=500):
         reddit_url_list.append(b.url)
-    histogram(reddit_url_list)
+    histogram(reddit_url_list, 'reddit')
 
     # twitter
     credentials = {
@@ -175,6 +181,6 @@ if __name__ == '__main__':
     print(len(twitter_urls))
     twitter_urls=list(set(twitter_urls))
     print(len(twitter_urls))
-    histogram(twitter_urls)
+    histogram(twitter_urls, 'twitter')
 
 

@@ -65,6 +65,8 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
         file_dir = 'ala image urls/' + species + 'RawFile.csv'
         image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
 
+    image_url_list=image_url_list[0:15]
+
 
     # going through a small portion of url list as can only upload 64 at a time
     for batch_number in range(math.ceil(len(image_url_list)/64)):
