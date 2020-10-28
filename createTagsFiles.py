@@ -15,13 +15,20 @@ def createTagsFiles(image_url_list, file_name):
     for image_url in image_url_list:
         tagsList = []
         try:
-            crops, tags = cropImage(image_url)
-            tagsList += list(set(tags))
+            crops, tags = cropImage(image_url, return_coords=True)
+            maxArea = 0
+            maxCoords = [0,0,0,0]
+            for image, coords in crops:
+                x1,y1,x2,y2,ratio = coords
+                if abs((x1-x2)*(y1-y2))>maxArea:
+                    maxCoords = [x1,y1,x2,y2]
+                    maxArea = abs((x1-x2)*(y1-y2))
+            tagsList += tags
         except urllib.error.HTTPError:
             pass
         except TypeError:
             pass
-        url_and_tags.append([image_url, tagsList])
+        url_and_tags.append([image_url, tagsList, maxCoords])
 
     # write new file with image urls and prediction percentages
     with open('tags/' + file_name + '.csv', 'w') as myfile:
@@ -51,9 +58,18 @@ def createTagsFilesFromImages(folder, file_name):
         # Performs label detection on the image file
         response = client.object_localization(image=image)
         tagsList = []
+        maxArea = 0
+        maxCoords = [0, 0, 0, 0]
         for tag in response.localized_object_annotations:
             tagsList.append(tag.name)
-        url_and_tags.append([image_dir, tagsList])
+            vertices = tag.bounding_poly.normalized_vertices
+            coords = [vertices[0].x, vertices[0].y,
+                      vertices[2].x, vertices[2].y]
+            x1, y1, x2, y2 = coords
+            if abs((x1-x2)*(y1-y2)) > maxArea:
+                maxCoords = coords
+                maxArea = abs((x1 - x2) * (y1 - y2))
+        url_and_tags.append([image_dir, tagsList, maxCoords])
 
     # write new file with image urls and prediction percentages
     with open('tags/' + file_name + '.csv', 'w') as myfile:
@@ -71,25 +87,31 @@ def getTagsFromFile(file_name):
             tags = lines[1]
             tags = tags[1:-1] # remove [ and ] from string
             if len(tags)==0:
-                url_and_tags.append([url, []])
+                newTags = []
             else:
                 tags = list(tags.split(", ")) # convert back to list
                 # remove quotation marks from each string
                 newTags = []
                 for tag in tags:
                     newTags.append(tag[1:-1])
-                url_and_tags.append([url, newTags])
+            coords = lines[2]
+            coords = coords[1:-1]  # remove [ and ] from string
+            coords = list(coords.split(", "))  # convert back to list
+            for index, coord in enumerate(coords):
+                coords[index] = float(coord)
+            # remove quotation marks from each string
+            url_and_tags.append([url, newTags, coords])
     return url_and_tags
 
 if __name__ == '__main__':
 
     # facebook
-    createTagsFilesFromImages('facebook_cane_toad_search', 'facebook')
+    #createTagsFilesFromImages('facebook_cane_toad_search', 'facebook')
 
     # twitter
-    createTagsFilesFromImages('twitter_canetoad_hashtag', 'twitter')
+    #createTagsFilesFromImages('twitter_canetoad_hashtag', 'twitter')
 
-    exit(-1)
+    #exit(-1)
 
 
     # flickr
@@ -131,17 +153,25 @@ if __name__ == '__main__':
     loader = Instaloader()
     NUM_POSTS = 10
 
-    def get_hashtags_posts(query):
-        posts = loader.get_hashtag_posts(query)
+
+    def get_hashtags_posts(mainTag, maxCount, additionalTag=None):
+        posts = loader.get_hashtag_posts(mainTag)
         urls = []
         count = 0
         for post in posts:
-            urls.append(post.url)
-            count+=1
-            if count==500:
-                return urls
+            if not additionalTag or additionalTag in post.caption_hashtags:
+                urls.append(post.url)
+                count += 1
+                if count == maxCount:
+                    return urls
 
-    createTagsFiles(get_hashtags_posts('canetoad'), 'instgram')
+    justCaneToad = get_hashtags_posts('canetoad', 500)
+    caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
+    caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
+
+    createTagsFiles(justCaneToad, 'instgramCaneToad')
+    createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
+    createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     #exit(-1)
 
 

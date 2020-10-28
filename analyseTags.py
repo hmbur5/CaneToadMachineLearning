@@ -9,7 +9,7 @@ with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'curve fit', 'number of tags >5% of images', 'proportion of images with tags','proportion of images with multiple tags', 'proportion of images with multiple animal tags', 'of images with animals, proportion of images with multiple animal tags'])
 
-    for source in ['flickr', 'ala', 'instgram', 'inaturalist', 'reddit', 'facebook', 'twitter']:
+    for source in ['flickr']:
         row_to_add = []
 
         print(source)
@@ -19,7 +19,8 @@ with open('tags/summary.csv', 'w') as myfile:
         url_and_tags = getTagsFromFile(source)
         tagsList = []
         image_url_list = []
-        for url,tags in url_and_tags:
+
+        for url,tags,coords in url_and_tags:
             tagsList+=list(set(tags))
             image_url_list.append(url)
 
@@ -61,7 +62,7 @@ with open('tags/summary.csv', 'w') as myfile:
         print('proportion of some tags')
         url_and_tags_multiple = []
         url_and_tags_some = []
-        for url, tags in url_and_tags:
+        for url, tags,coords in url_and_tags:
             if len(tags)>=1:
                 url_and_tags_some.append([url, tags])
             if len(tags)>1:
@@ -81,7 +82,7 @@ with open('tags/summary.csv', 'w') as myfile:
         url_and_tags_animals = []
         missing = []
 
-        for url, tags in url_and_tags:
+        for url, tags, coords in url_and_tags:
             animalsTags = [x for x in tags if x in animals]
             missing+=[x for x in tags if x not in animals]
             if len(animalsTags)>=1:
@@ -101,6 +102,24 @@ with open('tags/summary.csv', 'w') as myfile:
 
 
 
+
         plt.show()
+
+        # object size
+        areas = []
+        for url, tags, coords in url_and_tags:
+            x1=coords[0]
+            y1=coords[1]
+            x2=coords[2]
+            y2=coords[3]
+            # provided there is an object
+            if x1 or x2 or y1 or y2:
+                area = abs((x1-x2)*(y1-y2))
+                areas.append(area)
+        print(areas)
+        plt.hist(areas, bins=10)
+        plt.title(source)
+        plt.show()
+
 
         wr.writerow(row_to_add)
