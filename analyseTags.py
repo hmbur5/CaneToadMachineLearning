@@ -9,7 +9,7 @@ with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'curve fit', 'number of tags >5% of images', 'proportion of images with tags','proportion of images with multiple tags', 'proportion of images with multiple animal tags', 'of images with animals, proportion of images with multiple animal tags'])
 
-    for source in ['flickr']:
+    for source in ['instagramCaneToad','instagramCaneToadAndFrog','instagramCaneToadAndAmphibian']:
         row_to_add = []
 
         print(source)
@@ -34,7 +34,7 @@ with open('tags/summary.csv', 'w') as myfile:
         ticks = range(len(counts))
         # normalise to proportion of total number of images
         counts = counts / len(image_url_list)
-        plt.bar(ticks[0:25], counts[0:25], align='center')
+        plt.bar(ticks[0:25], counts[0:25]/max(counts), align='center')
         plt.xticks(ticks[0:25], labels[0:25], rotation='vertical')
         plt.title(source)
 
@@ -43,11 +43,13 @@ with open('tags/summary.csv', 'w') as myfile:
             return a*np.exp(-b*t)
         popt, pcov = curve_fit(func, ticks, counts)
         xx = np.linspace(0, len(ticks[0:25]), 1000)
-        yy = func(xx, *popt)
+        yy = func(xx, *popt)/max(counts)
         print('rate of decay:')
         print(popt)
         row_to_add.append("%.2f * e^( -%.2f * n)"%(popt[0],popt[1]))
         plt.plot(xx,yy,'r')
+        plt.show()
+
 
         # number at which counts<5%
         print('number of tags >5% of images:')
@@ -103,7 +105,6 @@ with open('tags/summary.csv', 'w') as myfile:
 
 
 
-        plt.show()
 
         # object size
         areas = []

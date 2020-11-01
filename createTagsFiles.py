@@ -7,6 +7,7 @@ import pandas as pd
 from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 import csv
+from predictFromImageUrl import predictFromImageUrl
 
 
 def createTagsFiles(image_url_list, file_name):
@@ -103,15 +104,45 @@ def getTagsFromFile(file_name):
             url_and_tags.append([url, newTags, coords])
     return url_and_tags
 
+
+def createPredictionFiles(file_name):
+    testing_image_urls = []
+    with open('tags/' + file_name +'.csv', "r") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for lines in csv_reader:
+            url = lines[0]
+            testing_image_urls.append([url, file_name, 'NA', 'NA', 'NA'])
+    save_file_as = 'tags/' + file_name + '_predictions'
+    # just using first 250 images
+    predictFromImageUrl(testing_image_urls[0:250], save_file_as)
+
+
+
 if __name__ == '__main__':
 
-    # facebook
-    #createTagsFilesFromImages('facebook_cane_toad_search', 'facebook')
-
-    # twitter
-    #createTagsFilesFromImages('twitter_canetoad_hashtag', 'twitter')
+    #for file_name in ['instagram', 'reddit', 'inaturalist']:
+    #    createPredictionFiles(file_name)
 
     #exit(-1)
+
+    # facebook
+    imageUrls = []
+    with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
+        for line in file:
+            imageUrls.append(line[10:-4])
+
+    createTagsFiles(imageUrls, 'facebook')
+    exit(-1)
+
+    # twitter
+    imageUrls = []
+    with open('twitter_canetoad_hashtag/twitter_canetoad_hashtag.html') as file:
+        for line in file:
+            imageUrls.append(line[10:-4])
+
+    createTagsFiles(imageUrls, 'twitter')
+
+    exit(-1)
 
 
     # flickr
@@ -184,6 +215,7 @@ if __name__ == '__main__':
         reddit_url_list.append(b.url)
 
     createTagsFiles(reddit_url_list, 'reddit')
+
 
 
 

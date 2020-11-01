@@ -141,12 +141,13 @@ def predict(image_file, iteration_name):
 
 
 # setting up project using keys
-ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
+#nhcha6
+ENDPOINT = "https://canetoads-prediction.cognitiveservices.azure.com/"
 
 # using nic
-training_key = "af562773faaa490eb5028a14ded3b8cc"
-prediction_key = "8043e5cca5634caaab92697bf568942d"
-prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
+training_key = "741668965a304e89847d9f1f768836f4"
+prediction_key = "4e2a8fab822b4d1a93ab372694f99525"
+prediction_resource_id = "/subscriptions/5939e776-823a-4dae-bd82-8339288ead8f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/canetoads-Prediction"
 
 
 

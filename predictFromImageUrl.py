@@ -18,12 +18,13 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
 
 
 # setting up project using keys
-ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
+#nhcha6
+ENDPOINT = "https://canetoads-prediction.cognitiveservices.azure.com/"
 
 # using nic
-training_key = "af562773faaa490eb5028a14ded3b8cc"
-prediction_key = "8043e5cca5634caaab92697bf568942d"
-prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
+training_key = "741668965a304e89847d9f1f768836f4"
+prediction_key = "4e2a8fab822b4d1a93ab372694f99525"
+prediction_resource_id = "/subscriptions/5939e776-823a-4dae-bd82-8339288ead8f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/canetoads-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -33,7 +34,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 for project in trainer.get_projects():
     if project.name == 'all':
         break
-publish_iteration_name = "Iteration6"
+publish_iteration_name = "Iteration1"
 
 
 # Now there is a trained endpoint that can be used to make a prediction
@@ -124,6 +125,10 @@ def predictFromImageUrl(testing_image_urls, file_name):
                         percentages.append(tag.probability)
                         # coordinates corresponding to whole image
                         image_coords.append('NA')
+
+        if 'NA' not in image_coords:
+            print(url)
+            continue
 
         # get image or crop corresponding to highest probability
         coords = image_coords[np.argmax(percentages)]

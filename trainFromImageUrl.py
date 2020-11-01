@@ -12,12 +12,13 @@ import csv
 
 
 # setting up project using keys
-ENDPOINT = "https://canetoadmodel-prediction.cognitiveservices.azure.com/"
+#nhcha6
+ENDPOINT = "https://canetoads-prediction.cognitiveservices.azure.com/"
 
 # using nic
-training_key = "af562773faaa490eb5028a14ded3b8cc"
-prediction_key = "8043e5cca5634caaab92697bf568942d"
-prediction_resource_id = "/subscriptions/79ac0136-fad4-4fe7-bda8-aec4a67de458/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/CaneToadModel-Prediction"
+training_key = "741668965a304e89847d9f1f768836f4"
+prediction_key = "4e2a8fab822b4d1a93ab372694f99525"
+prediction_resource_id = "/subscriptions/5939e776-823a-4dae-bd82-8339288ead8f/resourceGroups/CaneToads/providers/Microsoft.CognitiveServices/accounts/canetoads-Prediction"
 
 
 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
@@ -25,7 +26,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 
 # finding project id
 for project in trainer.get_projects():
-    if project.name == 'detection':
+    if project.name == 'all':
         break
 # iteration name must be changed each iteration to publish
 publish_iteration_name = "classify_model_basic"
@@ -65,7 +66,7 @@ for species in ['caneToad', 'stripedMarshFrog', 'ornateBurrowingFrog', 'australi
         file_dir = 'ala image urls/' + species + 'RawFile.csv'
         image_url_list = GetALAimages.listOfAlaImageUrls(file_dir)
 
-    image_url_list=image_url_list[0:15]
+    #image_url_list=image_url_list[0:15]
 
 
     # going through a small portion of url list as can only upload 64 at a time
