@@ -14,6 +14,7 @@ def createTagsFiles(image_url_list, file_name):
     url_and_tags = []
     print(len(image_url_list))
     for image_url in image_url_list:
+        #print(image_url)
         tagsList = []
         try:
             crops, tags = cropImage(image_url, return_coords=True)
@@ -29,6 +30,7 @@ def createTagsFiles(image_url_list, file_name):
             pass
         except TypeError:
             pass
+        #print(tagsList)
         url_and_tags.append([image_url, tagsList, maxCoords])
 
     # write new file with image urls and prediction percentages
@@ -111,38 +113,43 @@ def createPredictionFiles(file_name):
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             url = lines[0]
-            testing_image_urls.append([url, file_name, 'NA', 'NA', 'NA'])
-    save_file_as = 'tags/' + file_name + '_predictions'
-    # just using first 250 images
-    predictFromImageUrl(testing_image_urls[0:250], save_file_as)
+            tags = lines[1]
+            # avoid any duplicates
+            if [url, tags, 'NA', 'NA', 'NA'] not in testing_image_urls:
+                testing_image_urls.append([url, tags, 'NA', 'NA', 'NA'])
+            # just use first 250 images
+            if len(testing_image_urls)>=300:
+                break
+    save_file_as =  file_name + '_tag_predictions'
+    predictFromImageUrl(testing_image_urls, save_file_as)
 
 
 
 if __name__ == '__main__':
 
-    #for file_name in ['instagram', 'reddit', 'inaturalist']:
-    #    createPredictionFiles(file_name)
+    for file_name in ['instagram']:
+        createPredictionFiles(file_name)
 
-    #exit(-1)
+    exit(-1)
 
     # facebook
     imageUrls = []
     with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
         for line in file:
             imageUrls.append(line[10:-4])
-
-    createTagsFiles(imageUrls, 'facebook')
-    exit(-1)
+    # facebook doesn't work with image urls
+    #createTagsFiles(imageUrls, 'facebook')
+    #exit(-1)
 
     # twitter
     imageUrls = []
-    with open('twitter_canetoad_hashtag/twitter_canetoad_hashtag.html') as file:
+    with open('twitter_canetoad_hashtag/twitter_cane_toad_hashtag.html') as file:
         for line in file:
             imageUrls.append(line[10:-4])
 
-    createTagsFiles(imageUrls, 'twitter')
+    #createTagsFiles(imageUrls, 'twitter')
 
-    exit(-1)
+    #exit(-1)
 
 
     # flickr
@@ -166,18 +173,18 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    createTagsFiles(photoUrls, 'flickr')
+    #createTagsFiles(photoUrls, 'flickr')
     #exit(-1)
 
     #ala
     images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
-    createTagsFiles(images[0:500],'ala')
+    #createTagsFiles(images[0:500],'ala')
 
 
     # inaturalist
     df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
     saved_column = list(df['image_url'])
-    createTagsFiles(saved_column[0:500], 'inaturalist')
+    #createTagsFiles(saved_column[0:500], 'inaturalist')
 
 
     # instagram
@@ -196,23 +203,31 @@ if __name__ == '__main__':
                 if count == maxCount:
                     return urls
 
-    justCaneToad = get_hashtags_posts('canetoad', 500)
-    caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
-    caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
+    #justCaneToad = get_hashtags_posts('canetoad', 500)
+    #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
+    #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
-    createTagsFiles(justCaneToad, 'instgramCaneToad')
-    createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
-    createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
+    #createTagsFiles(justCaneToad, 'instgramCaneToad')
+    #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
+    #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     #exit(-1)
 
 
     # reddit
     import praw
+
     reddit = praw.Reddit(client_id='taeY_V0qktbKRg', client_secret='FCXYgqAcZ3vjTOrID52UOPiDqBk', user_agent='canetoad')
     all = reddit.subreddit('all')
     reddit_url_list = []
     for b in all.search("cane toads", limit=500):
-        reddit_url_list.append(b.url)
+        try:
+            # if image urls are in metadata
+            for key in b.media_metadata.keys():
+                # add image url for each image
+                reddit_url_list.append(b.media_metadata[key]['s']['u'])
+        except AttributeError:
+            # else if image url is in the submission
+            reddit_url_list.append(b.url)
 
     createTagsFiles(reddit_url_list, 'reddit')
 

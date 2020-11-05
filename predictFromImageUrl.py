@@ -10,6 +10,7 @@ from io import BytesIO
 import math
 from preCrop import cropImage
 import numpy as np
+import time
 
 
 import os, ssl
@@ -34,7 +35,7 @@ trainer = CustomVisionTrainingClient(ENDPOINT, credentials)
 for project in trainer.get_projects():
     if project.name == 'all':
         break
-publish_iteration_name = "Iteration1"
+publish_iteration_name = "Iteration2"
 
 
 # Now there is a trained endpoint that can be used to make a prediction
@@ -72,19 +73,32 @@ def predictFromImageUrl(testing_image_urls, file_name):
         image_coords = [None]
 
         # first using google cloud to crop image into regions of interest:
-        sections, tags = cropImage(url, return_coords=True)
+        try:
+            sections, tags = cropImage(url, return_coords=True)
+        # if image download is not allowed, cropping image does not work.
+        except urllib.error.HTTPError:
+            pass
         if len(sections)>0:
             for crop,coords in sections:
-                # if cane toad identified, break out of loop
-                #if max(percentages)>0.95:
-                #    break
-                results = predictFromImageFile(crop)
+                try:
+                    # if cane toad identified, break out of loop
+                    #if max(percentages)>0.95:
+                    #    break
+                    results = predictFromImageFile(crop)
+
+                except:
+                    print('too large')
+                    # if crops are too large for prediction (must be <4mb), use python to scale down
+                    height, width = crop.size
+                    # half size
+                    maxDim = math.floor(max([width, height])/2)
+                    crop.thumbnail((maxDim, maxDim))
+                    results = predictFromImageFile(crop)
+
                 for tag in results.predictions:
                     if tag.tag_name == 'caneToad':
                         percentages.append(tag.probability)
                         image_coords.append(coords)
-
-
 
         # if cane toad still not identified try whole photo
         if True: #max(percentages) < 0.95:
@@ -111,6 +125,8 @@ def predictFromImageUrl(testing_image_urls, file_name):
 
                 # if image actually doesn't exist
                 except OSError:
+                    results = None
+                except ValueError:
                     results = None
 
                 else:
@@ -148,7 +164,7 @@ def predictFromImageUrl(testing_image_urls, file_name):
     # write new file with image urls and prediction percentages
     with open('predictions/'+file_name+'.csv', 'w') as myfile:
         wr = csv.writer(myfile, delimiter = ',')
-        wr.writerows([['url','crop','source','prediction','lat','long','date']])
+        wr.writerows([['url','best crop','tags','uncropped prediction','best cropped prediction','lat','long','date']])
         wr.writerows(sorted_predictions)
 
     # write html file
