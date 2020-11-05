@@ -118,7 +118,7 @@ def createPredictionFiles(file_name):
             if [url, tags, 'NA', 'NA', 'NA'] not in testing_image_urls:
                 testing_image_urls.append([url, tags, 'NA', 'NA', 'NA'])
             # just use first 250 images
-            if len(testing_image_urls)>=300:
+            if len(testing_image_urls)>=250:
                 break
     save_file_as =  file_name + '_tag_predictions'
     predictFromImageUrl(testing_image_urls, save_file_as)
@@ -127,7 +127,7 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    for file_name in ['instagram']:
+    for file_name in ['ala']:
         createPredictionFiles(file_name)
 
     exit(-1)
