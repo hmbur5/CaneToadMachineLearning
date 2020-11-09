@@ -107,6 +107,39 @@ def getTagsFromFile(file_name):
     return url_and_tags
 
 
+def getTagsFromPredictions(file_name):
+    url_and_tags = []
+    with open('predictions/' + file_name +'_tag_predictions.csv', "r") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for lines in csv_reader:
+            # skip over first line
+            if lines[0]=='url':
+                continue
+
+            url = lines[0]
+            tags = lines[2]
+            tags = tags[1:-1] # remove [ and ] from string
+            if len(tags)==0:
+                newTags = []
+            else:
+                tags = list(tags.split(", ")) # convert back to list
+                # remove quotation marks from each string
+                newTags = []
+                for tag in tags:
+                    newTags.append(tag[1:-1])
+            # getting best crop
+            coords = lines[1]
+            if coords!='NA':
+                coords = coords[1:-1]  # remove [ and ] from string
+                coords = list(coords.split(", "))  # convert back to list
+                for index, coord in enumerate(coords):
+                    coords[index] = float(coord)
+            prediction = float(lines[4])
+            url_and_tags.append([url, newTags, coords, prediction])
+    return url_and_tags
+
+
+
 def createPredictionFiles(file_name):
     testing_image_urls = []
     with open('tags/' + file_name +'.csv', "r") as csv_file:
