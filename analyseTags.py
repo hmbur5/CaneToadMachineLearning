@@ -3,11 +3,13 @@ from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+import urllib
+from PIL import Image
 
 # write new file with image urls and prediction percentages
 with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
-    wr.writerow(['website', 'curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with multiple animal tags', 'of images with animals, proportion of images with multiple animal tags'])
+    wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human'])
 
     for source in ['instagram', 'twitter', 'flickr', 'ala', 'reddit', 'inaturalist']:
         row_to_add = []
@@ -15,26 +17,60 @@ with open('tags/summary.csv', 'w') as myfile:
         print(source)
         row_to_add.append(source)
 
-        # creating histogram
+
         url_and_tags = getTagsFromPredictions(source)
-        CtagsList = []
-        NtagsList = []
-        image_url_list = []
-        url_and_tags_new = []
+
         # remove any images without tags
+        url_and_tags_new = []
         for index, element in enumerate(url_and_tags):
             if len(element[1])>0:
                 url_and_tags_new.append(url_and_tags[index])
         url_and_tags = url_and_tags_new
 
-        for url,tags,coords,prediction in url_and_tags:
-            if prediction>0.95:
+
+        # remove duplicate images
+        url_and_tags_new = []
+        open_images = []
+        for index, element in enumerate(url_and_tags):
+            image_url = element[0]
+            img = urllib.request.urlopen(image_url)
+            img = Image.open(img)
+            if img not in open_images:
+                open_images.append(img)
+                url_and_tags_new.append(element)
+            else:
+                print('hi')
+        url_and_tags = url_and_tags_new
+
+
+        # check probability
+        CtagsList = []
+        NtagsList = []
+        image_url_list = []
+        url_and_tags_canetoad = []
+
+        for url,tags,coords,prediction, reid in url_and_tags:
+            if prediction>0.90:
                 CtagsList+=list(set(tags))
+                url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
             else:
                 NtagsList+=list(set(tags))
             image_url_list.append(url)
-        tagsList = CtagsList + NtagsList
+        print('proportion >90% cane toad probability')
+        print(len(url_and_tags_canetoad)/len(url_and_tags))
+        row_to_add.append("%.4f"%(len(url_and_tags_canetoad)/len(url_and_tags)))
 
+
+        url_and_tags_canetoad = []
+        for url,tags,coords,prediction, reid in url_and_tags:
+            if reid=='T' or reid=='PT':
+                url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
+        print('proportion verified cane toad')
+        print(len(url_and_tags_canetoad)/len(url_and_tags))
+        row_to_add.append("%.4f"%(len(url_and_tags_canetoad)/len(url_and_tags)))
+
+        # create histogram
+        tagsList = CtagsList + NtagsList
         labels, counts = np.unique(tagsList, return_counts=True)
         # sort in descending order
         sorted_indices = np.argsort(-counts)
@@ -87,7 +123,7 @@ with open('tags/summary.csv', 'w') as myfile:
             if len(covered)>0.90*len(url_and_tags):
                 break
             tag = labels[index]
-            for url, tags, coords, prediction in url_and_tags:
+            for url, tags, coords, prediction, reid in url_and_tags:
                 if tag in tags and url not in covered:
                     covered.append(url)
         row_to_add.append(index)
@@ -97,10 +133,10 @@ with open('tags/summary.csv', 'w') as myfile:
         print('number of images frog and animal cover:')
         covered = []
         for tag in ['Frog', 'Animal']:
-            for url, tags, coords, prediction in url_and_tags:
+            for url, tags, coords, prediction, reid in url_and_tags:
                 if tag in tags and url not in covered:
                     covered.append(url)
-        row_to_add.append(len(covered)/len(url_and_tags))
+        row_to_add.append("%.4f"%(len(covered)/len(url_and_tags)))
         print(len(covered)/len(url_and_tags))
 
 
@@ -108,7 +144,7 @@ with open('tags/summary.csv', 'w') as myfile:
         #print('proportion of some tags')
         url_and_tags_multiple = []
         url_and_tags_some = []
-        for url, tags, coords, prediction in url_and_tags:
+        for url, tags, coords, prediction, reid in url_and_tags:
             if len(tags)>=1:
                 url_and_tags_some.append([url, tags])
             if len(tags)>1:
@@ -125,23 +161,30 @@ with open('tags/summary.csv', 'w') as myfile:
 
         # percentage of images with multiple animal tags:
         url_and_tags_multiple_animals = []
+        url_and_tags_animal_and_human = []
         url_and_tags_animals = []
         missing = []
 
-        for url, tags, coords, prediction in url_and_tags:
+        for url, tags, coords, prediction, reid in url_and_tags:
             animalsTags = [x for x in tags if x in animals]
             missing+=[x for x in tags if x not in animals]
             if len(animalsTags)>=1:
                 url_and_tags_animals.append([url, animalsTags])
+                if 'Person' in tags:
+                    url_and_tags_animal_and_human.append([url, animalsTags+['Person']])
             if len(animalsTags)>1:
                 url_and_tags_multiple_animals.append([url, animalsTags])
 
+        print('proportion of photos with animals')
+        print(len(url_and_tags_animals)/len(url_and_tags))
+        row_to_add.append("%.4f" %(len(url_and_tags_animals)/len(url_and_tags)))
         print('proportion of multiple animal tags')
         print(len(url_and_tags_multiple_animals)/len(url_and_tags))
         row_to_add.append("%.4f" %(len(url_and_tags_multiple_animals)/len(url_and_tags)))
-        print('proportion of multiple animal tags out of photos with animals')
-        print(len(url_and_tags_multiple_animals)/len(url_and_tags_animals))
-        row_to_add.append("%.4f" %(len(url_and_tags_multiple_animals)/len(url_and_tags_animals)))
+        print('proportion of animal and person tags')
+        print(len(url_and_tags_animal_and_human) / len(url_and_tags))
+        row_to_add.append("%.4f" % (len(url_and_tags_animal_and_human) / len(url_and_tags)))
+
 
         #print('missing tags')
         #print(list(set(missing)))

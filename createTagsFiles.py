@@ -8,6 +8,7 @@ from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 import csv
 from predictFromImageUrl import predictFromImageUrl
+import time
 
 
 def createTagsFiles(image_url_list, file_name):
@@ -109,7 +110,7 @@ def getTagsFromFile(file_name):
 
 def getTagsFromPredictions(file_name):
     url_and_tags = []
-    with open('predictions/' + file_name +'_tag_predictions.csv', "r") as csv_file:
+    with open('predictions/reid/' + file_name +'_tag_predictions.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -135,7 +136,8 @@ def getTagsFromPredictions(file_name):
                 for index, coord in enumerate(coords):
                     coords[index] = float(coord)
             prediction = float(lines[4])
-            url_and_tags.append([url, newTags, coords, prediction])
+            reid = lines[5]
+            url_and_tags.append([url, newTags, coords, prediction, reid])
     return url_and_tags
 
 
@@ -160,10 +162,10 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    for file_name in ['ala']:
-        createPredictionFiles(file_name)
+    #for file_name in ['ala']:
+    #    createPredictionFiles(file_name)
 
-    exit(-1)
+    #exit(-1)
 
     # facebook
     imageUrls = []
@@ -228,19 +230,23 @@ if __name__ == '__main__':
     def get_hashtags_posts(mainTag, maxCount, additionalTag=None):
         posts = loader.get_hashtag_posts(mainTag)
         urls = []
+        users = []
         count = 0
         for post in posts:
-            if not additionalTag or additionalTag in post.caption_hashtags:
-                urls.append(post.url)
-                count += 1
-                if count == maxCount:
-                    return urls
+            time.sleep(1)
+            if post.owner_username not in users:
+                users.append(post.owner_username)
+                if not additionalTag or additionalTag in post.caption_hashtags:
+                    urls.append(post.url)
+                    count += 1
+                    if count == maxCount:
+                        return urls
 
-    #justCaneToad = get_hashtags_posts('canetoad', 500)
+    justCaneToad = get_hashtags_posts('canetoad', 500)
     #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
-    #createTagsFiles(justCaneToad, 'instgramCaneToad')
+    createTagsFiles(justCaneToad, 'instgramCaneToad')
     #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     #exit(-1)
