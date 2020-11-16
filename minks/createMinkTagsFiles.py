@@ -4,7 +4,7 @@ from preCrop import cropImage
 from instaloader import Instaloader
 import urllib
 import pandas as pd
-from GetALAimages import listOfAlaImageUrls
+#from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 import csv
 from predictFromImageUrl import predictFromImageUrl
@@ -169,18 +169,18 @@ if __name__ == '__main__':
 
     # facebook
     imageUrls = []
-    with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
-        for line in file:
-            imageUrls.append(line[10:-4])
+    #with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
+    #    for line in file:
+    #        imageUrls.append(line[10:-4])
     # facebook doesn't work with image urls
     #createTagsFiles(imageUrls, 'facebook')
     #exit(-1)
 
     # twitter
     imageUrls = []
-    with open('twitter_canetoad_hashtag/twitter_cane_toad_hashtag.html') as file:
-        for line in file:
-            imageUrls.append(line[10:-4])
+    #with open('twitter_canetoad_hashtag/twitter_cane_toad_hashtag.html') as file:
+    #    for line in file:
+    #        imageUrls.append(line[10:-4])
 
     #createTagsFiles(imageUrls, 'twitter')
 
@@ -199,8 +199,7 @@ if __name__ == '__main__':
     photoUrls = []
     for pageNumber in [0,1]:
         # search limited to those with gps coordinates within australia
-        photoSearch = flickr.photos.search(text='cane toad', per_page=250, page=pageNumber, has_geo = True, extras=extras,
-                                           bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
+        photoSearch = flickr.photos.search(text='mink', per_page=250, page=pageNumber, has_geo = True, extras=extras)
         photos = photoSearch['photos']
         for element in photos['photo']:
             try:
@@ -208,17 +207,17 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    #createTagsFiles(photoUrls, 'flickr')
+    createTagsFiles(photoUrls, 'flickr')
     #exit(-1)
 
     #ala
-    images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
+    #images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
     #createTagsFiles(images[0:500],'ala')
 
 
     # inaturalist
-    df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
-    saved_column = list(df['image_url'])
+    #df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
+    #saved_column = list(df['image_url'])
     #createTagsFiles(saved_column[0:500], 'inaturalist')
 
 
@@ -243,11 +242,11 @@ if __name__ == '__main__':
                         return urls
 
     #justCaneToad = get_hashtags_posts('canetoad', 500)
-    #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
+    minkAndFerret = get_hashtags_posts('mink', 250, 'ferret')
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
     #createTagsFiles(justCaneToad, 'instgramCaneToad')
-    #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
+    createTagsFiles(minkAndFerret, 'instgramMinkAndFerret')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     #exit(-1)
 

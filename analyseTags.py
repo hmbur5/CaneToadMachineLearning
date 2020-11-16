@@ -210,3 +210,33 @@ with open('tags/summary.csv', 'w') as myfile:
 
 
         wr.writerow(row_to_add)
+
+
+
+        # comparing false positives to false negatives
+        thresholds = np.linspace(0, 1, 100)
+        false_pos_thresh = []
+        false_neg_thresh = []
+        for thresh in thresholds:
+            false_pos = []
+            false_neg = []
+            positives = []
+            negatives = []
+            for url, tags, coords, prediction, reid in url_and_tags:
+                if reid == 'T' or reid == 'PT':
+                    positives.append(url)
+                    if prediction<thresh:
+                        false_neg.append(url)
+                else:
+                    negatives.append(url)
+                    if prediction>thresh:
+                        false_pos.append(url)
+            false_pos_thresh.append(len(false_pos)/len(negatives))
+            false_neg_thresh.append(len(false_neg)/len(positives))
+        plt.plot(thresholds, false_pos_thresh)
+        plt.plot(thresholds, false_neg_thresh)
+        plt.title(source)
+        plt.legend(['false positives', 'false negatives'])
+        plt.xlabel('Probability threshold')
+        plt.ylabel('Proportion of wrongly classified images')
+        plt.show()
