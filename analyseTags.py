@@ -50,11 +50,12 @@ with open('tags/summary.csv', 'w') as myfile:
         url_and_tags_canetoad = []
 
         for url,tags,coords,prediction, reid in url_and_tags:
-            if prediction>0.90:
+            if reid=='T' or reid=='PT':
                 CtagsList+=list(set(tags))
-                url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
             else:
                 NtagsList+=list(set(tags))
+            if prediction>0.90:
+                url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
             image_url_list.append(url)
         print('proportion >90% cane toad probability')
         print(len(url_and_tags_canetoad)/len(url_and_tags))
@@ -215,8 +216,12 @@ with open('tags/summary.csv', 'w') as myfile:
 
         # comparing false positives to false negatives
         thresholds = np.linspace(0, 1, 100)
+        thresholds_valid = []
         false_pos_thresh = []
         false_neg_thresh = []
+        percentage_frog_animal_thresh = []
+        verified_thresh = []
+        exponents_thresh = []
         for thresh in thresholds:
             false_pos = []
             false_neg = []
@@ -233,10 +238,57 @@ with open('tags/summary.csv', 'w') as myfile:
                         false_pos.append(url)
             false_pos_thresh.append(len(false_pos)/len(negatives))
             false_neg_thresh.append(len(false_neg)/len(positives))
+
+            # creating a set of images that are above the given threshold
+            above_thresh_set = []
+            verified = []
+            for url, tags, coords, prediction, reid in url_and_tags:
+                if prediction>thresh:
+                    above_thresh_set.append([url, tags, coords, prediction, reid])
+
+            # number of images frog and animal cover
+            covered = []
+            tagsList = []
+            for tag in ['Frog', 'Animal']:
+                for url, tags, coords, prediction, reid in above_thresh_set:
+                    if tag in tags and url not in covered:
+                        covered.append(url)
+
+            for url, tags, coords, prediction, reid in above_thresh_set:
+                # check which ones are verified
+                if reid=='T' or reid=='PT':
+                    verified.append(url)
+                # tags for histogram
+                tagsList += list(set(tags))
+
+
+            if len(above_thresh_set)>0:
+                thresholds_valid.append(thresh)
+                verified_thresh.append(len(verified)/len(above_thresh_set))
+                percentage_frog_animal_thresh.append(len(covered)/len(above_thresh_set))
+
+                # get exponential
+                labels, counts = np.unique(tagsList, return_counts=True)
+                sorted_indices = np.argsort(-counts)
+                counts = counts[sorted_indices]
+                counts = counts / max(counts)
+                ticks = range(len(counts))
+                popt, pcov = curve_fit(func, ticks, counts)
+                exponents_thresh.append(popt[0])
+
         plt.plot(thresholds, false_pos_thresh)
         plt.plot(thresholds, false_neg_thresh)
         plt.title(source)
         plt.legend(['false positives', 'false negatives'])
         plt.xlabel('Probability threshold')
         plt.ylabel('Proportion of wrongly classified images')
+        plt.show()
+
+        plt.plot(thresholds_valid, percentage_frog_animal_thresh)
+        plt.plot(thresholds_valid, exponents_thresh)
+        plt.plot(thresholds_valid, verified_thresh)
+        plt.title(source)
+        plt.legend(['percentage frog and animal covered', 'rate of decay', 'percentage verified as cane toad'])
+        plt.xlabel('Probability threshold')
+        plt.ylabel('Proportion of images out of images above the threshold')
         plt.show()
