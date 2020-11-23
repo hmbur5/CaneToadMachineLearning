@@ -162,7 +162,7 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    #for file_name in ['ala']:
+    #for file_name in ['flickr']:
     #    createPredictionFiles(file_name)
 
     #exit(-1)
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     extras = 'geo, url_t, url_c, date_taken'
 
     photoUrls = []
-    for pageNumber in [0,1]:
+    for pageNumber in [0]:
         # search limited to those with gps coordinates within australia
         photoSearch = flickr.photos.search(text='mink', per_page=250, page=pageNumber, has_geo = True, extras=extras)
         photos = photoSearch['photos']
@@ -207,7 +207,7 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    createTagsFiles(photoUrls, 'flickr')
+    #createTagsFiles(photoUrls, 'flickr')
     #exit(-1)
 
     #ala
@@ -242,11 +242,11 @@ if __name__ == '__main__':
                         return urls
 
     #justCaneToad = get_hashtags_posts('canetoad', 500)
-    minkAndFerret = get_hashtags_posts('mink', 250, 'ferret')
+    mink = get_hashtags_posts('mink', 100)
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
     #createTagsFiles(justCaneToad, 'instgramCaneToad')
-    createTagsFiles(minkAndFerret, 'instgramMinkAndFerret')
+    createTagsFiles(mink, 'instagramMink')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     #exit(-1)
 

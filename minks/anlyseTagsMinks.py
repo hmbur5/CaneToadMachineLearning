@@ -14,7 +14,7 @@ with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human'])
 
-    for source in ['flickr']:
+    for source in ['instagramMink']:
 
         url_and_tags = []
         with open('tags/' + source + '.csv', "r") as csv_file:

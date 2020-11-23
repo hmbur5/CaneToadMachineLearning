@@ -11,6 +11,7 @@ from predictFromImageUrl import predictFromImageUrl
 import time
 
 
+
 def createTagsFiles(image_url_list, file_name):
     url_and_tags = []
     print(len(image_url_list))
@@ -27,6 +28,9 @@ def createTagsFiles(image_url_list, file_name):
                     maxCoords = [x1,y1,x2,y2]
                     maxArea = abs((x1-x2)*(y1-y2))
             tagsList += tags
+
+
+
         except urllib.error.HTTPError:
             pass
         except TypeError:
@@ -208,8 +212,8 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    #createTagsFiles(photoUrls, 'flickr')
-    #exit(-1)
+    createTagsFiles(photoUrls, 'flickr')
+    exit(-1)
 
     #ala
     images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')

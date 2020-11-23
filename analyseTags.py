@@ -5,11 +5,22 @@ import matplotlib.pyplot as plt
 import csv
 import urllib
 from PIL import Image
+from google.cloud import vision
+from google.cloud.vision import types
+client = vision.ImageAnnotatorClient()
+import io
+
+
+def ColourDistance(rgb1,rgb2):
+    rm = 0.5*(rgb1[0]+rgb2[0])
+    d = sum((2+rm,4,3-rm)*(rgb1-rgb2)**2)**0.5
+    return d
+
 
 # write new file with image urls and prediction percentages
 with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
-    wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human'])
+    wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human', 'proportion of verified predator photos'])
 
     for source in ['instagram', 'twitter', 'flickr', 'ala', 'reddit', 'inaturalist']:
         row_to_add = []
@@ -114,7 +125,7 @@ with open('tags/summary.csv', 'w') as myfile:
         print(popt)
         row_to_add.append("e^( -%.2f * n)"%(popt[0]))
         plt.plot(xx,yy,'b')
-        plt.show()
+        #plt.show()
 
 
         # minumum number of tags to cover 90% of images
@@ -187,6 +198,15 @@ with open('tags/summary.csv', 'w') as myfile:
         row_to_add.append("%.4f" % (len(url_and_tags_animal_and_human) / len(url_and_tags)))
 
 
+        # predator and prey photos
+        pred = 0
+        for url, tags, coords, prediction, reid in url_and_tags:
+            if reid=='PT':
+                pred+=1
+        print('proportion of verified predator photos')
+        print(pred/len(url_and_tags))
+        row_to_add.append("%.4f" % (pred/ len(url_and_tags)))
+
         #print('missing tags')
         #print(list(set(missing)))
 
@@ -208,6 +228,74 @@ with open('tags/summary.csv', 'w') as myfile:
         #plt.hist(areas, bins=10)
         #plt.title(source)
         #plt.show()
+
+
+
+        # dominant colours
+        '''imageSet_colours = []
+        for url, tags, coords, prediction, reid in url_and_tags:
+
+            source = types.ImageSource(image_uri=url)
+            image = types.Image(source=source)
+            response = client.image_properties(image=image)
+            # Performs label detection on the image file
+            props = response.image_properties_annotation
+
+            colours = []
+            for color in props.dominant_colors.colors:
+                dict = {}
+                dict['fraction'] = color.pixel_fraction
+                dict['red'] = color.color.red
+                dict['green'] = color.color.green
+                dict['blue'] = color.color.blue
+                colours.append(dict)
+            #print(colours)
+            imageSet_colours+=colours
+        #print(imageSet_colours)'''
+
+
+        # combine whole image set to find dominant colours in that set
+
+        new_im = Image.new('RGB', (100*len(url_and_tags), 100))
+        index = 0
+        for url, tags, coords, prediction, reid in url_and_tags:
+            img = urllib.request.urlopen(url)
+            img = Image.open(img)
+            img = img.resize((100,100))
+            new_im.paste(img, (index, 0))
+            index+=100
+        new_im.show()
+
+        img_byte_arr = io.BytesIO()
+        new_im.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+
+        image = types.Image(content=img_byte_arr)
+        response = client.image_properties(image=image)
+        # Performs label detection on the image file
+        props = response.image_properties_annotation
+
+        colours = []
+        for color in props.dominant_colors.colors:
+            dict = {}
+            dict['fraction'] = color.pixel_fraction
+            dict['red'] = color.color.red
+            dict['green'] = color.color.green
+            dict['blue'] = color.color.blue
+            colours.append(dict)
+        print(colours)
+
+        sizes = []
+        labels = []
+        for color in colours:
+            sizes.append(color['fraction']*100)
+            labels.append((color['red']/255,color['green']/255,color['blue']/255))
+
+        plt.clf()
+        plt.pie(sizes, colors=labels)
+        plt.title(source)
+        plt.show()
+
 
 
         wr.writerow(row_to_add)
@@ -282,7 +370,7 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.legend(['false positives', 'false negatives'])
         plt.xlabel('Probability threshold')
         plt.ylabel('Proportion of wrongly classified images')
-        plt.show()
+        #plt.show()
 
         plt.plot(thresholds_valid, percentage_frog_animal_thresh)
         plt.plot(thresholds_valid, exponents_thresh)
@@ -291,4 +379,4 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.legend(['percentage frog and animal covered', 'rate of decay', 'percentage verified as cane toad'])
         plt.xlabel('Probability threshold')
         plt.ylabel('Proportion of images out of images above the threshold')
-        plt.show()
+        #plt.show()
