@@ -9,18 +9,72 @@ from google.cloud import vision
 from google.cloud.vision import types
 client = vision.ImageAnnotatorClient()
 import io
+import math
 
 
-def ColourDistance(rgb1,rgb2):
-    rm = 0.5*(rgb1[0]+rgb2[0])
-    d = sum((2+rm,4,3-rm)*(rgb1-rgb2)**2)**0.5
-    return d
+
+def colour_distance(RGB1, RGB2):
+    R1,G1,B1 = RGB1
+    R2,G2,B2 = RGB2
+    cR = R1 - R2
+    cG = G1 - G2
+    cB = B1 - B2
+    uR = R1 + R2
+    distance = cR * cR * (2 + uR / 256) + cG * cG * 4 + cB * cB * (2 + (255 - uR) / 256)
+    return distance
+
+def rgb_to_hsv(r, g, b):
+    r, g, b = r/255.0, g/255.0, b/255.0
+    mx = max(r, g, b)
+    mn = min(r, g, b)
+    df = mx-mn
+    if mx == mn:
+        h = 0
+    elif mx == r:
+        h = (60 * ((g-b)/df) + 360) % 360
+    elif mx == g:
+        h = (60 * ((b-r)/df) + 120) % 360
+    elif mx == b:
+        h = (60 * ((r-g)/df) + 240) % 360
+    if mx == 0:
+        s = 0
+    else:
+        s = (df/mx)*100
+    v = mx*100
+    return h, s, v
+
+
+
+
+def step(r, g, b, repetitions=1):
+    r=r*255
+    g=g*255
+    b=b*255
+    lum = math.sqrt(.241 * r + .691 * g + .068 * b)
+
+    h, s, v = rgb_to_hsv(r, g, b)
+
+    h2 = int(h * repetitions)
+    lum2 = int(lum * repetitions)
+    v2 = int(v * repetitions)
+
+    if h2 % 2 == 1:
+        v2 = repetitions - v2
+    lum = repetitions - lum
+
+    return (h2, lum, v2)
+
+
+
+
+
+
 
 
 # write new file with image urls and prediction percentages
 with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
-    wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human', 'proportion of verified predator photos'])
+    wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human', 'proportion of verified predator photos', 'colour distance histogram max'])
 
     for source in ['instagram', 'twitter', 'flickr', 'ala', 'reddit', 'inaturalist']:
         row_to_add = []
@@ -249,9 +303,38 @@ with open('tags/summary.csv', 'w') as myfile:
                 dict['green'] = color.color.green
                 dict['blue'] = color.color.blue
                 colours.append(dict)
-            #print(colours)
+            print(colours)
             imageSet_colours+=colours
-        #print(imageSet_colours)'''
+        #print(imageSet_colours)
+
+        size = []
+        label_rgb = []
+        for color in imageSet_colours:
+            size.append(color['fraction'])
+            label_rgb.append((color['red']/255,color['green']/255,color['blue']/255))
+
+        label_rgb_new = sorted(label_rgb, key=lambda rgb: step(*rgb))
+
+        print(len(size))
+        print(len(label_rgb_new))
+        print(len(label_rgb))
+
+        size_new = [0]*len(size)
+        for index, element in enumerate(label_rgb):
+            for index2, element2 in enumerate(label_rgb_new):
+                if element==element2:
+                    size_new[index2]=size[index]
+        size = size_new/np.sum(size_new)*100
+        #size = size[np.argsort(label_hex)]
+        #label_rgb_new = []
+        #for i in np.argsort(label_hex):
+        #    label_rgb_new.append(label_rgb[i])
+
+        plt.clf()
+        plt.pie(size, colors=label_rgb)
+        plt.title(source)
+        plt.show()'''
+
 
 
         # combine whole image set to find dominant colours in that set
@@ -294,8 +377,18 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.clf()
         plt.pie(sizes, colors=labels)
         plt.title(source)
-        plt.show()
+        #plt.show()
 
+        distances = []
+        pix = new_im.load()
+        for x in range(0, 100*len(url_and_tags)):
+            for y in range(0,100):
+                distances.append(colour_distance((100, 82, 60), pix[x,y]))
+        plt.hist(distances, bins=50,density=True)
+        plt.title(source)
+        #plt.show()
+        y, x, _ = plt.hist(distances, bins=50,density=True)
+        row_to_add.append(max(y))
 
 
         wr.writerow(row_to_add)
