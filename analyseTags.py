@@ -76,7 +76,7 @@ with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit', 'number of tags to cover 90% of images','proprtion of images covered by frog and animal','proportion of images with multiple tags', 'proportion of images with any animal tag', 'proportion of images with multiple animal tags', 'proportion of images with animal and human', 'proportion of verified predator photos', 'colour distance histogram max'])
 
-    for source in ['instagram', 'twitter', 'flickr', 'ala', 'reddit', 'inaturalist']:
+    for source in ['ala', 'instagram_new', 'twitter', 'flickr', 'reddit', 'inaturalist']:
         row_to_add = []
 
         print(source)
@@ -98,13 +98,16 @@ with open('tags/summary.csv', 'w') as myfile:
         open_images = []
         for index, element in enumerate(url_and_tags):
             image_url = element[0]
-            img = urllib.request.urlopen(image_url)
-            img = Image.open(img)
-            if img not in open_images:
-                open_images.append(img)
-                url_and_tags_new.append(element)
-            else:
-                print('hi')
+            try:
+                img = urllib.request.urlopen(image_url)
+                img = Image.open(img)
+                if img not in open_images:
+                    open_images.append(img)
+                    url_and_tags_new.append(element)
+                else:
+                    print('duplicate')
+            except urllib.error.HTTPError:
+                print(image_url)
         url_and_tags = url_and_tags_new
 
 
@@ -181,6 +184,73 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.plot(xx,yy,'b')
         #plt.show()
 
+
+
+
+        # compare distributions
+        if source == 'twitter':
+            tagsListTwitter = tagsList
+            no_imagesTwitter = len(url_and_tags)
+        if source == 'reddit':
+            tagsListReddit = tagsList
+            no_imagesReddit = len(url_and_tags)
+        if source == 'inaturalist':
+            tagsListInaturalist = tagsList
+            no_imagesInaturalist = len(url_and_tags)
+        if source=='flickr':
+            tagsListFlickr = tagsList
+            no_imagesFlickr = len(url_and_tags)
+        if source=='ala':
+            tagsListALA = tagsList
+            no_imagesALA = len(url_and_tags)
+        else:
+            ALAlabels, ALAcounts = np.unique(tagsListALA, return_counts=True)
+            # sort in descending order
+
+            labels, counts = np.unique(tagsList, return_counts=True)
+            for label in ALAlabels:
+                labels = np.append(labels, label)
+            labels = list(set(labels))
+
+            counts = [0.0] * len(labels)
+            ALAcounts = [0.0] * len(labels)
+            for index, label in enumerate(labels):
+                for tag in tagsList:
+                    if tag == label:
+                        counts[index] += 1
+                for tag in tagsListALA:
+                    if tag == label:
+                        ALAcounts[index] +=1
+
+            for index, count in enumerate(counts):
+                ALAcounts[index] = ALAcounts[index]/no_imagesALA
+                count = count/len(url_and_tags)
+                try:
+                    counts[index] = count-ALAcounts[index]
+                except IndexError:
+                    counts[index] = count
+
+            abscounts = []
+            for count in counts:
+                abscounts.append(-abs(count))
+
+            sorted_indices = np.argsort(abscounts)
+            sortedCounts = []
+            sortedLabels = []
+            for i in sorted_indices:
+                sortedCounts.append(counts[i])
+                sortedLabels.append(labels[i])
+
+
+            ticks = range(len(sortedCounts))
+            plt.clf()
+            plt.bar(ticks[0:25], sortedCounts[0:25], align='center')
+            plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+            plt.title(source)
+            plt.ylim([-0.5,0.5])
+            #plt.show()
+
+        continue
 
         # minumum number of tags to cover 90% of images
         print('number of tags covering 90% of images:')
@@ -473,3 +543,107 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.xlabel('Probability threshold')
         plt.ylabel('Proportion of images out of images above the threshold')
         #plt.show()
+
+
+
+
+
+
+
+
+# errors of each website
+labels = []
+countsDict = {}
+
+for source in ['ala','instagram_new','flickr','twitter','reddit','inaturalist']:
+    if source == 'ala':
+        tagsList = tagsListALA
+        no_images = no_imagesALA
+    if source == 'flickr':
+        tagsList = tagsListFlickr
+        no_images = no_imagesFlickr
+    if source == 'twitter':
+        tagsList = tagsListTwitter
+        no_images = no_imagesTwitter
+    if source == 'reddit':
+        tagsList = tagsListReddit
+        no_images = no_imagesReddit
+    if source == 'inaturalist':
+        tagsList = tagsListInaturalist
+        no_images = no_imagesInaturalist
+
+
+    labels_new, counts = np.unique(tagsList, return_counts=True)
+    for label in labels_new:
+        labels = np.append(labels, labels_new)
+    labels = list(set(labels))
+
+
+    counts = [0.0] * len(labels)
+    for index, label in enumerate(labels):
+        for tag in tagsList:
+            if tag == label:
+                counts[index] += 1
+
+    for index,count in enumerate(counts):
+        counts[index] = count/no_images
+
+    for index,label in enumerate(labels):
+        try:
+            countsDict[label].append([counts[index],source])
+        except KeyError:
+            countsDict[label] = [[counts[index], source]]
+
+
+alaComparison = dict()
+allCounts = []
+allLabels = []
+for label in countsDict.keys():
+    list = countsDict[label]
+    for counts, source in list:
+        if source=='ala':
+            alaComparison[label] = counts
+    # if there were no counts of this tag
+    if label not in alaComparison:
+        alaComparison[label] = 0
+
+    # convert all other counts to errors
+    for index, tuple in enumerate(list):
+        list[index][0] = tuple[0] - alaComparison[label]
+
+        allLabels.append(label)
+        allCounts.append(list[index][0])
+
+
+abscounts = []
+for count in allCounts:
+    abscounts.append(-abs(count))
+
+sorted_indices = np.argsort(abscounts)
+sortedCounts = []
+sortedLabels = []
+
+for i in sorted_indices:
+    sortedCounts.append(allCounts[i])
+    if allLabels[i] not in sortedLabels:
+        sortedLabels.append(allLabels[i])
+
+plt.clf()
+plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+plt.ylim([-0.5, 0.5])
+for source in ['flickr','instagram_new','twitter','reddit','inaturalist']:
+    counts = []
+    for label in sortedLabels:
+        for tuple in countsDict[label]:
+            if tuple[1]==source:
+                break
+        if tuple[1]!= source:
+            counts.append(0)
+        else:
+            counts.append(tuple[0])
+
+    ticks = range(len(counts))
+    plt.scatter(ticks[0:25], counts[0:25])
+
+plt.legend(['flickr','instagram_new','twitter','reddit','inaturalist'])
+plt.show()

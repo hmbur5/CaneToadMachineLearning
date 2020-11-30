@@ -1,3 +1,5 @@
+import os
+os.chdir("../")
 import numpy as np
 import matplotlib.pyplot as plt
 from preCrop import cropImage
@@ -9,7 +11,6 @@ from flickrapi import FlickrAPI
 import csv
 from predictFromImageUrl import predictFromImageUrl
 import time
-
 
 
 def createTagsFiles(image_url_list, file_name):
@@ -28,9 +29,6 @@ def createTagsFiles(image_url_list, file_name):
                     maxCoords = [x1,y1,x2,y2]
                     maxArea = abs((x1-x2)*(y1-y2))
             tagsList += tags
-
-
-
         except urllib.error.HTTPError:
             pass
         except TypeError:
@@ -39,7 +37,7 @@ def createTagsFiles(image_url_list, file_name):
         url_and_tags.append([image_url, tagsList, maxCoords])
 
     # write new file with image urls and prediction percentages
-    with open('tags/' + file_name + '.csv', 'w') as myfile:
+    with open('camels/tags/' + file_name + '.csv', 'w') as myfile:
         wr = csv.writer(myfile, delimiter=',')
         wr.writerows(url_and_tags)
 
@@ -166,29 +164,29 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    for file_name in ['instgramCaneToad_new']:
-        createPredictionFiles(file_name)
+    #for file_name in ['flickr']:
+    #    createPredictionFiles(file_name)
 
-    exit(-1)
+    #exit(-1)
 
     # facebook
     imageUrls = []
-    with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
-        for line in file:
-            imageUrls.append(line[10:-4])
+    #with open('facebook_cane_toad_search/facebook_cane_toad_search.html') as file:
+    #    for line in file:
+    #        imageUrls.append(line[10:-4])
     # facebook doesn't work with image urls
     #createTagsFiles(imageUrls, 'facebook')
     #exit(-1)
 
     # twitter
     imageUrls = []
-    with open('twitter_canetoad_hashtag/twitter_cane_toad_hashtag.html') as file:
+    with open('camels/twitter_camel_hashtag.html') as file:
         for line in file:
             imageUrls.append(line[10:-4])
 
     #createTagsFiles(imageUrls, 'twitter')
-
     #exit(-1)
+
 
 
     # flickr
@@ -201,10 +199,9 @@ if __name__ == '__main__':
     extras = 'geo, url_t, url_c, date_taken'
 
     photoUrls = []
-    for pageNumber in [0,1]:
+    for pageNumber in [0]:
         # search limited to those with gps coordinates within australia
-        photoSearch = flickr.photos.search(text='cane toad', per_page=250, page=pageNumber, has_geo = True, extras=extras,
-                                           bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
+        photoSearch = flickr.photos.search(text='camel', per_page=250, page=pageNumber, has_geo = True, extras=extras)
         photos = photoSearch['photos']
         for element in photos['photo']:
             try:
@@ -216,15 +213,15 @@ if __name__ == '__main__':
     #exit(-1)
 
     #ala
-    images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
-    #createTagsFiles(images[0:500],'ala')
+    images=listOfAlaImageUrls('ala image urls/ala_camels.csv')
+    #createTagsFiles(images[0:250],'ala')
 
 
     # inaturalist
-    df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
+    df = pd.read_csv("ala image urls/iNaturalist_camel.csv")
     saved_column = list(df['image_url'])
-    #createTagsFiles(saved_column[0:500], 'inaturalist')
-
+    #createTagsFiles(saved_column[1:251], 'inaturalist')
+    #exit(-1)
 
     # instagram
     loader = Instaloader()
@@ -246,12 +243,12 @@ if __name__ == '__main__':
                     if count == maxCount:
                         return urls
 
-    justCaneToad = get_hashtags_posts('canetoad', 500)
-    #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
+    #justCaneToad = get_hashtags_posts('canetoad', 500)
+    camel = get_hashtags_posts('camels', 100)
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
-    createTagsFiles(justCaneToad, 'instgramCaneToad')
-    #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
+    #createTagsFiles(justCaneToad, 'instgramCaneToad')
+    createTagsFiles(camel, 'instagram')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     exit(-1)
 
@@ -262,7 +259,7 @@ if __name__ == '__main__':
     reddit = praw.Reddit(client_id='taeY_V0qktbKRg', client_secret='FCXYgqAcZ3vjTOrID52UOPiDqBk', user_agent='canetoad')
     all = reddit.subreddit('all')
     reddit_url_list = []
-    for b in all.search("cane toads", limit=500):
+    for b in all.search("camels", limit=500):
         try:
             # if image urls are in metadata
             for key in b.media_metadata.keys():
@@ -271,6 +268,8 @@ if __name__ == '__main__':
         except AttributeError:
             # else if image url is in the submission
             reddit_url_list.append(b.url)
+        except KeyError:
+            print(b.media_metadata[key])
 
     createTagsFiles(reddit_url_list, 'reddit')
 
