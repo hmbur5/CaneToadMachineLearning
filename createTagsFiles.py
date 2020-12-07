@@ -7,7 +7,7 @@ import pandas as pd
 from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 import csv
-from predictFromImageUrl import predictFromImageUrl
+#from predictFromImageUrl import predictFromImageUrl
 import time
 
 
@@ -123,6 +123,8 @@ def getTagsFromPredictions(file_name):
 
             url = lines[0]
             tags = lines[2]
+            if tags[0]!= '[':
+                continue
             tags = tags[1:-1] # remove [ and ] from string
             if len(tags)==0:
                 newTags = []
@@ -166,10 +168,10 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    for file_name in ['instgramCaneToad_new']:
-        createPredictionFiles(file_name)
+    #for file_name in ['instgramCaneToad_new']:
+    #    createPredictionFiles(file_name)
 
-    exit(-1)
+    #exit(-1)
 
     # facebook
     imageUrls = []
@@ -246,7 +248,7 @@ if __name__ == '__main__':
                     if count == maxCount:
                         return urls
 
-    justCaneToad = get_hashtags_posts('canetoad', 500)
+    justCaneToad = get_hashtags_posts('canetoad', 1500)
     #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 

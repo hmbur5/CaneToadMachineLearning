@@ -48,7 +48,7 @@ with open('predictions/reid/instagram_tag_predictions.csv', "r") as csv_file:
                 element[5] = reid
                 element[6] = note
                 url_and_tags_new.append(element)
-            if "%.4f %.4f" %(unPre,crPre) == "%.4f %.4f" %(float(element[3]),float(element[4])):
+            if tags == element[2] and "%.3f %.3f" %(unPre,crPre) == "%.3f %.3f" %(float(element[3]),float(element[4])):
                 print('hi')
                 element[1] = crop
                 element[3] = unPre
