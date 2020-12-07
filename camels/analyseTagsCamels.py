@@ -69,14 +69,14 @@ def step(r, g, b, repetitions=1):
 # write new file with image urls and prediction percentages
 with open('tags/summary.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
-    wr.writerow(['website', 'proportion verified camels','curve fit', 'number of tags to cover 90% of images',
+    wr.writerow(['website', 'proportion verified camels','curve fit', 'rms error from inat','number of tags to cover 90% of images',
                  'proprtion of images covered by camel and animal','proportion of images with multiple tags',
                  'proportion of images with any animal tag', 'proportion of images with multiple animal tags',
                  'proportion of images with animal and human', 'min colour distance from (168, 107, 50)'])
 
     url_and_tags_all = []
 
-    for source in ['instagram', 'twitter', 'flickr', 'ala', 'reddit', 'inaturalist']:
+    for source in ['inaturalist','instagram', 'twitter', 'flickr', 'ala', 'reddit']:
 
 
         url_and_tags = []
@@ -172,9 +172,12 @@ with open('tags/summary.csv', 'w') as myfile:
         # normalise so peak is at 1
         counts = counts / max(counts)
 
+        plt.clf()
         plt.bar(ticks[0:25], counts[0:25], align='center', color='orange')
         plt.xticks(ticks[0:25], labels[0:25], rotation='vertical')
+        plt.gcf().subplots_adjust(bottom=0.35)
         plt.title(source)
+        #plt.show()
 
         # creating exponential fit
         def func(t, b):
@@ -187,6 +190,81 @@ with open('tags/summary.csv', 'w') as myfile:
         row_to_add.append("e^( -%.2f * n)"%(popt[0]))
         plt.plot(xx,yy,'b')
         #plt.show()
+
+
+        # compare distributions
+        if source == 'instagram':
+            tagsListInstagram = tagsList
+            no_imagesInstagram = len(url_and_tags)
+        if source == 'twitter':
+            tagsListTwitter = tagsList
+            no_imagesTwitter = len(url_and_tags)
+        if source == 'reddit':
+            tagsListReddit = tagsList
+            no_imagesReddit = len(url_and_tags)
+        if source=='flickr':
+            tagsListFlickr = tagsList
+            no_imagesFlickr = len(url_and_tags)
+        if source=='ala':
+            tagsListALA = tagsList
+            no_imagesALA = len(url_and_tags)
+            row_to_add.append("0")
+        if source == 'inaturalist':
+            tagsListInat = tagsList
+            no_imagesInat = len(url_and_tags)
+        else:
+            Inatlabels, Inatcounts = np.unique(tagsListInat, return_counts=True)
+            # sort in descending order
+
+            labels, counts = np.unique(tagsList, return_counts=True)
+            for label in Inatlabels:
+                labels = np.append(labels, label)
+            labels = list(set(labels))
+
+            counts = [0.0] * len(labels)
+            Inatcounts = [0.0] * len(labels)
+            for index, label in enumerate(labels):
+                for tag in tagsList:
+                    if tag == label:
+                        counts[index] += 1
+                for tag in tagsListInat:
+                    if tag == label:
+                        Inatcounts[index] +=1
+
+            for index, count in enumerate(counts):
+                Inatcounts[index] = Inatcounts[index]/no_imagesInat
+                count = count/len(url_and_tags)
+                try:
+                    counts[index] = count-Inatcounts[index]
+                except IndexError:
+                    counts[index] = count
+
+            abscounts = []
+            for count in counts:
+                abscounts.append(-abs(count))
+
+            sorted_indices = np.argsort(abscounts)
+            sortedCounts = []
+            sortedLabels = []
+            for i in sorted_indices:
+                sortedCounts.append(counts[i])
+                sortedLabels.append(labels[i])
+
+
+            ticks = range(len(sortedCounts))
+            plt.clf()
+            plt.bar(ticks[0:25], sortedCounts[0:25], align='center')
+            plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+            plt.title(source)
+            plt.ylim([-0.5,0.5])
+            #plt.show()
+
+            rms_error  = np.sqrt(np.mean(np.square(sortedCounts)))
+            row_to_add.append('%.4f' %(rms_error))
+            print('RMS error from inaturalist')
+            print(rms_error)
+
+        continue
 
 
 
@@ -267,7 +345,7 @@ with open('tags/summary.csv', 'w') as myfile:
 
 
 
-
+        '''
         # colours
         # combine whole image set to find dominant colours in that set
 
@@ -297,52 +375,117 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.title(source)
         # plt.show()
         y, x, _ = plt.hist(distances, bins=50, density=True)
-        row_to_add.append(max(y))
+        row_to_add.append(max(y))'''
 
 
         wr.writerow(row_to_add)
 
 
 
-# create histogram of all tags
+
+
+# errors of each website
+labels = []
+countsDict = {}
+
+for source in ['inaturalist','ala','instagram','flickr','twitter','reddit']:
+    if source == 'ala':
+        tagsList = tagsListALA
+        no_images = no_imagesALA
+    if source == 'instagram':
+        tagsList = tagsListInstagram
+        no_images = no_imagesInstagram
+    if source == 'flickr':
+        tagsList = tagsListFlickr
+        no_images = no_imagesFlickr
+    if source == 'twitter':
+        tagsList = tagsListTwitter
+        no_images = no_imagesTwitter
+    if source == 'reddit':
+        tagsList = tagsListReddit
+        no_images = no_imagesReddit
+    if source == 'inaturalist':
+        tagsList = tagsListInat
+        no_images = no_imagesInat
+
+
+    labels_new, counts = np.unique(tagsList, return_counts=True)
+    for label in labels_new:
+        labels = np.append(labels, labels_new)
+    labels = list(set(labels))
+
+
+    counts = [0.0] * len(labels)
+    for index, label in enumerate(labels):
+        for tag in tagsList:
+            if tag == label:
+                counts[index] += 1
+
+    for index,count in enumerate(counts):
+        counts[index] = count/no_images
+
+    for index,label in enumerate(labels):
+        try:
+            countsDict[label].append([counts[index],source])
+        except KeyError:
+            countsDict[label] = [[counts[index], source]]
+
+
+InatComparison = {}
+allCounts = []
+allLabels = []
+for label in countsDict.keys():
+    list = countsDict[label]
+    for counts, source in list:
+        if source=='inaturalist':
+            InatComparison[label] = counts
+    # if there were no counts of this tag
+    if label not in InatComparison:
+        InatComparison[label] = 0
+
+    # convert all other counts to errors
+    for index, tuple in enumerate(list):
+        list[index][0] = tuple[0] - InatComparison[label]
+
+        allLabels.append(label)
+        allCounts.append(list[index][0])
+
+
+abscounts = []
+for count in allCounts:
+    abscounts.append(-abs(count))
+
+sorted_indices = np.argsort(abscounts)
+sortedCounts = []
+sortedLabels = []
+
+for i in sorted_indices:
+    sortedCounts.append(allCounts[i])
+    if allLabels[i] not in sortedLabels:
+        sortedLabels.append(allLabels[i])
 
 plt.clf()
+plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+plt.ylim([-0.5, 0.5])
+for source in ['flickr','instagram','twitter','reddit','ala']:
+    counts = []
+    for label in sortedLabels:
+        for tuple in countsDict[label]:
+            if tuple[1]==source:
+                break
+        if tuple[1]!= source:
+            counts.append(0)
+        else:
+            counts.append(tuple[0])
 
-tagsList = []
-for url, tags, hannah in url_and_tags_all:
-    tagsList+= list(set(tags))
-print(tagsList)
-# create histogram
-labels, counts = np.unique(tagsList, return_counts=True)
-# sort in descending order
-sorted_indices = np.argsort(-counts)
-counts = counts[sorted_indices]
-labels = labels[sorted_indices]
+    ticks = range(len(counts))
+    plt.scatter(ticks[0:25], counts[0:25])
 
-
-#counts = counts[0:25]
-#labels = labels[0:25]
-ticks = range(len(counts))
-# normalise to proportion of total number of images
-#counts = counts / len(image_url_list)
-# normalise so peak is at 1
-counts = counts / max(counts)
-
-plt.bar(ticks[0:25], counts[0:25], align='center', color='orange')
-plt.xticks(ticks[0:25], labels[0:25], rotation='vertical')
-plt.title(source)
-
-# creating exponential fit
-def func(t, b):
-    return np.exp(-b*t)
-popt, pcov = curve_fit(func, ticks, counts)
-xx = np.linspace(0, len(ticks[0:25]), 1000)
-yy = func(xx, *popt)/max(counts)
-print('rate of decay:')
-print(popt)
-row_to_add.append("e^( -%.2f * n)"%(popt[0]))
-plt.plot(xx,yy,'b')
+plt.gcf().subplots_adjust(bottom=0.35)
+plt.ylabel('Tag frequency deviation from iNaturalist')
+plt.legend(['flickr','instagram','twitter','reddit','ala'])
 plt.show()
+
 
 
 
