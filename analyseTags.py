@@ -81,7 +81,7 @@ with open('tags/summary.csv', 'w') as myfile:
                  'proportion of images with animal and human', 'proportion of verified predator photos',
                  'colour distance histogram max'])
 
-    for source in ['ala', 'instagram_new', 'twitter', 'flickr', 'reddit', 'inaturalist']:
+    for source in ['ala', 'inaturalist', 'instagram_new', 'twitter', 'flickr', 'reddit', 'inaturalist']:
         row_to_add = []
 
         print(source)
