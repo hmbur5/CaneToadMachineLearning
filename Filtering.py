@@ -4,6 +4,8 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
 def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
     # get ala images
     url_and_tags = getTagsFromPredictions(filterSource)
@@ -147,6 +149,14 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
         rms_error = np.sqrt(np.mean(np.square(sortedCounts)))
         print('RMS filtered error from ala')
         print(rms_error)
+
+        ticks = range(len(sortedCounts))
+        plt.clf()
+        plt.bar(ticks[0:25], sortedCounts[0:25], align='center')
+        plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+        plt.title(source)
+        plt.ylim([-0.5, 0.5])
+        plt.show()
 
 
     return url_and_tags_filtered
