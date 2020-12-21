@@ -13,7 +13,35 @@ from matplotlib.backends.backend_pgf import FigureCanvasPgf
 matplotlib.backend_bases.register_backend('pdf', FigureCanvasPgf)
 rc('text',usetex=True)
 rc('text.latex', preamble=r'\usepackage{color}')
-from createTagsFiles import getTagsFromPredictions
+
+
+
+def getTagsFromFile(source):
+    url_and_tags = []
+    with open('tags/verified/' + source + '.csv', "r") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for lines in csv_reader:
+            url = lines[0]
+            tags = lines[1]
+            tags = tags[1:-1]
+            if len(tags) == 0:
+                newTags = []
+            else:
+                tags = list(tags.split(", "))  # convert back to list
+                # remove quotation marks from each string
+                newTags = []
+                for tag in tags:
+                    newTags.append(tag[1:-1])
+            hannah = lines[3]
+            # avoid any duplicates
+            if [url, newTags, hannah] not in url_and_tags:
+                url_and_tags.append([url, newTags, hannah])
+
+            # just use first 250 images
+            if len(url_and_tags) >= 250:
+                break
+    return url_and_tags
+
 
 pgf_with_latex = {
     "pgf.preamble": r'\usepackage{xcolor}'
@@ -36,7 +64,6 @@ from google.cloud.vision import types
 from io import BytesIO
 # Instantiates a client
 client = vision.ImageAnnotatorClient()
-from Filtering import filter
 
 import json
 import urllib.parse
@@ -143,9 +170,9 @@ def create_tree(dataframe):
 
 
 class comparing_clusters:
-    def __init__(self, filterSource = 'ala'):
+    def __init__(self, filterSource = 'inaturalist'):
         # get ala images
-        url_and_tags = getTagsFromPredictions(filterSource, return_note=True)
+        url_and_tags = getTagsFromFile(filterSource)
 
         # remove any images without tags
         url_and_tags_new = []
@@ -174,7 +201,7 @@ class comparing_clusters:
 
         tagsListALA = []
         urlList = []
-        for url, tags, coords, prediction, reid, note in url_and_tags:
+        for url, tags, hannah in url_and_tags:
             urlList.append(url)
             tagsListALA += list(set(tags))
 
@@ -217,8 +244,8 @@ class comparing_clusters:
     def comparisonDict(self, url_and_tags_comparison):
         self.urlDict = {}
         # dictionay of all image urls so that tags can be accessed easily
-        for url, tags, coords, prediction, reid, note in url_and_tags_comparison:
-            self.urlDict[url] = [tags, coords, prediction, reid, note]
+        for url, tags, hannah in url_and_tags_comparison:
+            self.urlDict[url] = [tags, hannah]
 
     def getCompareImageLabels(self, website_source):
         if website_source not in self.CompareImageLabels.keys():
@@ -274,11 +301,11 @@ class comparing_clusters:
         url_and_tags = []
         # build url_and_tags from dictionary
         for url in urlList:
-            tags, coords, prediction, reid, note = self.urlDict[url]
-            url_and_tags.append([url, tags, coords, prediction, reid, note])
+            tags, hannah = self.urlDict[url]
+            url_and_tags.append([url, tags, hannah])
 
         tagsList = []
-        for url, tags, coords, prediction, reid, note in url_and_tags:
+        for url, tags, hannah in url_and_tags:
             tagsList += list(set(tags))
 
         labels, counts = np.unique(tagsList, return_counts=True)
@@ -328,38 +355,6 @@ class comparing_clusters:
         return np.average(distances)
 
 
-    def minALAdistance(self, urlList, website_source):
-        distances = []
-        for url in urlList:
-            try:
-                distances.append(self.compareImageDist[website_source][url])
-            except KeyError:
-                pass
-        return np.min(distances)
-
-    def createAlaSpread(self):
-        alaLabels = []
-        for url in self.AlaImageLabels.keys():
-            alaLabels+=self.AlaImageLabels[url]
-
-        ALAlabels, ALAcounts = np.unique(alaLabels, return_counts=True)
-        self.ALAlabelFreq = {}
-        for index,label in enumerate(ALAlabels):
-            self.ALAlabelFreq[label] = ALAcounts[index]/len(self.AlaImageLabels.keys())
-
-    def compareToSpread(self, url, website_source):
-        labels = self.CompareImageLabels[website_source][url]
-        distanceFromAve = []
-        for label in labels:
-            try:
-                freq = self.ALAlabelFreq[label]
-            except KeyError:
-                freq = 0
-            distanceFromAve.append(1 - freq)
-        return np.average(distanceFromAve)
-
-
-
     def containingAlaKeywords(self, urlList, website_source):
         alaLabels = []
         for url in self.AlaImageLabels.keys():
@@ -385,11 +380,11 @@ class comparing_clusters:
         return count/len(urlList)
 
 
-    def proportionCaneToads(self, urlList):
+    def proportionCamels(self, urlList):
         verified_urls = []
         for url in urlList:
-            tags, coords, prediction, reid, note = self.urlDict[url]
-            if reid=='T' or reid =='PT':
+            tags, hannah = self.urlDict[url]
+            if hannah=='C':
                 verified_urls.append(url)
         try:
             return(len(verified_urls)/len(urlList))
@@ -405,41 +400,26 @@ class comparing_clusters:
 
         plt.clf()
 
-        dn = scipy.cluster.hierarchy.dendrogram(clustered, color_threshold=0, labels=list(dataframe.columns),
-                                                above_threshold_color='black', distance_sort = 'ascending')
+        dn = scipy.cluster.hierarchy.dendrogram(clustered, color_threshold=0, labels=list(dataframe.columns))
         ax = plt.gca()
         xlbls = ax.get_xticklabels()
         for lbl in xlbls:
             lbl.set_fontsize('x-large')
 
-            # set colour based on verified to be cane toad
+            # set colour based on verified to be camel
             for url in self.urlDict.keys():
-                tags, coords, prediction, reid, note = self.urlDict[url]
+                tags, hannah = self.urlDict[url]
                 if lbl.get_text() == url:
-                    #st=r'{'+ note+'}'
-
-
-                    if reid == 'T' or reid == 'PT':
+                    if hannah == 'C':
                         st = r'\textcolor{green}{-}'
                     else:
                         st = r'\textcolor{red}{-}'
 
-                    if note!= '':
-                        st += r'\textcolor{yellow}{-}'
-                    elif note!= 'xTOAD RACE':
-                        st += r'\textcolor{purple}{-}'
-                    if note == 'xTOAD RACE':
-                        st += r'\textcolor{gray}{-}'
-
-
-                    
-
-                    # set letter based on whether it is filtered/unfiltered
-                    if lbl.get_text() in filtered_urls:
-                        st += r'\textcolor{blue}{-}'
-                    else:
-                        st += r'\textcolor{orange}{-}'
-
+            # set letter based on whether it is filtered/unfiltered
+            if lbl.get_text() in filtered_urls:
+                st += r'\textcolor{blue}{-}'
+            else:
+                st += r'\textcolor{orange}{-}'
 
 
             lbl.set_text(st)
@@ -452,7 +432,6 @@ class comparing_clusters:
         plt.savefig('./clustering/' + source + '.pdf', bbox_inches='tight')
 
 
-from createTagsFiles import getTagsFromPredictions
 #alaComparison = comparing_clusters()
 #alaComparison.getAlaImageLabels()
 #file = open("./clustering/alaComparison.obj", 'wb')
@@ -462,16 +441,16 @@ with open('./clustering/alaComparison.obj', 'rb') as pickle_file:
     alaComparison = pickle.load(pickle_file)
 
 
-for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
+for source in ['flickr','twitter','instagram', 'reddit', 'ala']:
 
     print(source)
 
-
-    '''url_and_tags = getTagsFromPredictions(source)
+    '''
+    url_and_tags = getTagsFromFile(source)
     # remove any images without tags
     url_and_tags_new = []
     for index, element in enumerate(url_and_tags):
-        if len(element[1] ) >-1:
+        if len(element[1] ) >0:
             url_and_tags_new.append(url_and_tags[index])
     url_and_tags = url_and_tags_new
 
@@ -510,7 +489,7 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     tree = create_tree(dataframe)
 
     # input url_and_tags from the source to build dictionary (don't need to preprocess as only urls in clusters are used)
-    alaComparison.comparisonDict(getTagsFromPredictions(source, return_note=True))
+    alaComparison.comparisonDict(getTagsFromFile(source))
     alaComparison.getCompareImageLabels(source)
     alaComparison.getCompareImageDist(source)
 
@@ -524,29 +503,17 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     # remove last cluster from the list (as this is just everything
     keys = list(tree.keys())
     keys = keys[0:-1]
-    for key in keys[0:dataframe.shape[0]]:
+    for key in keys:
         sub_cluster = tree[key]
         rms = alaComparison.rms(sub_cluster)
         '''print('image list')
         print(len(sub_cluster))
-        print('prop cane toads')
-        print(alaComparison.proportionCaneToads(sub_cluster))
+        print('prop camel')
+        print(alaComparison.proportionCamels(sub_cluster))
         print('average counts')'''
 
-        if alaComparison.averageALAdistance(sub_cluster, source) < 0.95:
+        if alaComparison.averageALAdistance(sub_cluster, source) < 0.85:
             filtered_urls += sub_cluster
-
-    filtered_urls = []
-    for sub_cluster in dataframe.columns:
-        sub_cluster = [sub_cluster]
-        if alaComparison.averageALAdistance(sub_cluster, source) < 0.80:
-            filtered_urls += sub_cluster
-
-    alaComparison.createAlaSpread()
-    filtered_urls = []
-    for sub_cluster in dataframe.columns:
-        if alaComparison.compareToSpread(sub_cluster, source) < 0.80:
-            filtered_urls.append(sub_cluster)
 
 
         #print(alaComparison.averageALAdistance(sub_cluster, source))
@@ -554,8 +521,8 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     #print(alaComparison.rms(filtered_urls))
     print(dataframe.shape[0])
     print(len(filtered_urls))
-    print(alaComparison.proportionCaneToads(dataframe.columns))
-    print(alaComparison.proportionCaneToads(filtered_urls))
+    print(alaComparison.proportionCamels(dataframe.columns))
+    print(alaComparison.proportionCamels(filtered_urls))
 
     alaComparison.plot(dataframe, source, filtered_urls)
 

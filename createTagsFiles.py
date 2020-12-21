@@ -7,8 +7,9 @@ import pandas as pd
 from GetALAimages import listOfAlaImageUrls
 from flickrapi import FlickrAPI
 import csv
-#from predictFromImageUrl import predictFromImageUrl
+from predictFromImageUrl import predictFromImageUrl
 import time
+import datetime
 
 
 
@@ -112,7 +113,7 @@ def getTagsFromFile(file_name):
     return url_and_tags
 
 
-def getTagsFromPredictions(file_name):
+def getTagsFromPredictions(file_name, return_note=False):
     url_and_tags = []
     with open('predictions/reid/' + file_name +'_tag_predictions.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -143,7 +144,15 @@ def getTagsFromPredictions(file_name):
                     coords[index] = float(coord)
             prediction = float(lines[4])
             reid = lines[5]
-            url_and_tags.append([url, newTags, coords, prediction, reid])
+            if not return_note:
+                url_and_tags.append([url, newTags, coords, prediction, reid])
+            else:
+                try:
+                    note = lines[6]
+                except IndexError:
+                    note = ''
+                url_and_tags.append([url, newTags, coords, prediction, reid, note])
+
     return url_and_tags
 
 
@@ -159,7 +168,7 @@ def createPredictionFiles(file_name):
             if [url, tags, 'NA', 'NA', 'NA'] not in testing_image_urls:
                 testing_image_urls.append([url, tags, 'NA', 'NA', 'NA'])
             # just use first 250 images
-            if len(testing_image_urls)>=250:
+            if len(testing_image_urls)>=400:
                 break
     save_file_as =  file_name + '_tag_predictions'
     predictFromImageUrl(testing_image_urls, save_file_as)
@@ -168,10 +177,10 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    #for file_name in ['instgramCaneToad_new']:
-    #    createPredictionFiles(file_name)
+    for file_name in ['instgramCaneToad_all']:
+        createPredictionFiles(file_name)
 
-    #exit(-1)
+    exit(-1)
 
     # facebook
     imageUrls = []
@@ -202,7 +211,7 @@ if __name__ == '__main__':
     # extras for photo search (can include geo tag, date etc)
     extras = 'geo, url_t, url_c, date_taken'
 
-    photoUrls = []
+    '''photoUrls = []
     for pageNumber in [0,1]:
         # search limited to those with gps coordinates within australia
         photoSearch = flickr.photos.search(text='cane toad', per_page=250, page=pageNumber, has_geo = True, extras=extras,
@@ -213,7 +222,7 @@ if __name__ == '__main__':
                 photoUrls.append(element['url_c'])
             except:
                 # if larger image file doesn't exist, just use thumbnail
-                photoUrls.append(element['url_t'])
+                photoUrls.append(element['url_t'])'''
     #createTagsFiles(photoUrls, 'flickr')
     #exit(-1)
 
@@ -236,23 +245,24 @@ if __name__ == '__main__':
     def get_hashtags_posts(mainTag, maxCount, additionalTag=None):
         posts = loader.get_hashtag_posts(mainTag)
         urls = []
-        users = []
         count = 0
         for post in posts:
+            # skip all posts from december/november
+            if post.date>datetime.datetime(2020, 10, 28):
+                continue
+            print(post.date)
             time.sleep(1)
-            if post.owner_username not in users:
-                users.append(post.owner_username)
-                if not additionalTag or additionalTag in post.caption_hashtags:
-                    urls.append(post.url)
-                    count += 1
-                    if count == maxCount:
-                        return urls
+            if not additionalTag or additionalTag in post.caption_hashtags:
+                urls.append(post.url)
+                count += 1
+                if count == maxCount:
+                    return urls
 
-    justCaneToad = get_hashtags_posts('canetoad', 1500)
+    justCaneToad = get_hashtags_posts('canetoad', 400)
     #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
-    createTagsFiles(justCaneToad, 'instgramCaneToad')
+    createTagsFiles(justCaneToad, 'instgramCaneToad_all')
     #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
     exit(-1)
