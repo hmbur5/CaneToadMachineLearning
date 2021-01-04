@@ -119,6 +119,7 @@ def distanceMatrix(image_urls):
 
 def create_tree(dataframe):
     clusters = {}
+    distances = {}
     labels = dataframe.columns
     condDistMat = scipy.spatial.distance.squareform(dataframe.values)
     to_merge = scipy.cluster.hierarchy.ward(condDistMat)
@@ -136,8 +137,9 @@ def create_tree(dataframe):
             b = clusters[int(merge[1])]
         # the clusters are 1-indexed by scipy
         clusters[1 + i + len(to_merge)] = a+b
+        distances[1 + i + len(to_merge)] = merge[2]
         # ^ you could optionally store other info here (e.g distances)
-    return clusters
+    return clusters, distances
 
 
 
@@ -396,7 +398,7 @@ class comparing_clusters:
         except ZeroDivisionError:
             return(0)
 
-    def plot(self, dataframe, source, filtered_urls):
+    def plot(self, dataframe, source, filtered_urls, tree, distance_tree):
 
         distMat = dataframe.values
 
@@ -406,7 +408,37 @@ class comparing_clusters:
         plt.clf()
 
         dn = scipy.cluster.hierarchy.dendrogram(clustered, color_threshold=0, labels=list(dataframe.columns),
-                                                above_threshold_color='black', distance_sort = 'ascending')
+                                                above_threshold_color='lightblue', distance_sort = 'ascending',
+                                                get_leaves=True)
+
+
+
+
+
+
+
+        for i, d in zip(dn['icoord'], dn['dcoord']):
+
+            for dist_key in distance_tree.keys():
+                if d[1] == distance_tree[dist_key]:
+                    urls = tree[dist_key]
+                    if len(urls)>40:
+                        labels = []
+                        for url in urls:
+                            labels += alaComparison.CompareImageLabels[source][url]
+                        unique, counts = np.unique(labels, return_counts=True)
+                        most_common_label = unique[np.argmax(counts)]
+                        print(most_common_label)
+
+                        x = 0.5 * sum(i[1:3])
+                        y = d[1]
+                        #plt.plot(x, y, 'bo')
+                        plt.annotate("%s %d%%" % (most_common_label, int(100*max(counts)/len(urls))), (x, y), xytext=(0, -8),
+                                     textcoords='offset points',
+                                     va='top', ha='center')
+
+
+
         ax = plt.gca()
         xlbls = ax.get_xticklabels()
         for lbl in xlbls:
@@ -507,7 +539,7 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
 
 
 
-    tree = create_tree(dataframe)
+    tree, distance_tree = create_tree(dataframe)
 
     # input url_and_tags from the source to build dictionary (don't need to preprocess as only urls in clusters are used)
     alaComparison.comparisonDict(getTagsFromPredictions(source, return_note=True))
@@ -518,6 +550,8 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     # save object
     file = open("./clustering/alaComparison.obj", 'wb')
     pickle.dump(alaComparison, file)
+
+
 
 
     filtered_urls = []
@@ -557,7 +591,10 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     print(alaComparison.proportionCaneToads(dataframe.columns))
     print(alaComparison.proportionCaneToads(filtered_urls))
 
-    alaComparison.plot(dataframe, source, filtered_urls)
+
+
+
+    alaComparison.plot(dataframe, source, filtered_urls, tree, distance_tree)
 
 
     # save object
