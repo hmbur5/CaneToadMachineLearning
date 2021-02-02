@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 
-def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
+def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_tags_filtered = [], check_rms = False):
     # get ala images
     url_and_tags = getTagsFromPredictions(filterSource)
 
@@ -68,6 +68,8 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
             if tag == label:
                 ALAcounts[index] += 1
 
+
+
     for index, count in enumerate(counts):
         ALAcounts[index] = ALAcounts[index] / no_imagesALA
         count = count / len(url_and_tags)
@@ -76,32 +78,52 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
         except IndexError:
             counts[index] = count
 
-    threshold = 0.05
-    above = []
-    below = []
-    for index, count in enumerate(counts):
-        if count >threshold:
-            above.append(labels[index])
-        if count <-1*threshold:
-            below.append(labels[index])
+    abscounts = []
+    for count in counts:
+        abscounts.append(-abs(count))
+
+    sorted_indices = np.argsort(abscounts)
+    sortedCounts = []
+    sortedLabels = []
+    for i in sorted_indices:
+        sortedCounts.append(counts[i])
+        sortedLabels.append(labels[i])
+
+    rms_error = np.sqrt(np.mean(np.square(sortedCounts)))
+    print('RMS error from ala')
+    print(rms_error)
 
 
-    print(above)
-    print(below)
+    # filtering
+    if filter:
 
-    url_and_tags_filtered = []
-    for url,tags,coords,prediction, reid in url_and_tags:
-        filter = False
-        for tag in above:
-            if tag in tags:
-                filter = True
-                break
-        for tag in below:
-            if tag in tags:
-                filter = False
-                break
-        if not filter:
-            url_and_tags_filtered.append([url, tags, coords, prediction, reid])
+
+        threshold = 0.05
+        above = []
+        below = []
+        for index, count in enumerate(counts):
+            if count >threshold:
+                above.append(labels[index])
+            if count <-1*threshold:
+                below.append(labels[index])
+
+
+        print(above)
+        print(below)
+
+        url_and_tags_filtered = []
+        for url,tags,coords,prediction, reid in url_and_tags:
+            filter = False
+            for tag in above:
+                if tag in tags:
+                    filter = True
+                    break
+            for tag in below:
+                if tag in tags:
+                    filter = False
+                    break
+            if not filter:
+                url_and_tags_filtered.append([url, tags, coords, prediction, reid])
 
 
     if check_rms:
@@ -133,6 +155,7 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
             except IndexError:
                 counts[index] = count
 
+        print(len(url_and_tags))
         print(len(url_and_tags_filtered))
 
         abscounts = []
@@ -146,9 +169,9 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
             sortedCounts.append(counts[i])
             sortedLabels.append(labels[i])
 
-        rms_error = np.sqrt(np.mean(np.square(sortedCounts)))
+        rms_filtered_error = np.sqrt(np.mean(np.square(sortedCounts)))
         print('RMS filtered error from ala')
-        print(rms_error)
+        print(rms_filtered_error)
 
         ticks = range(len(sortedCounts))
         plt.clf()
@@ -159,11 +182,42 @@ def filter(url_and_tags_comparison, filterSource = 'ala', check_rms = False):
         plt.show()
 
 
-    return url_and_tags_filtered
+    return (url_and_tags_filtered, rms_error, rms_filtered_error)
+
+
+
+
+
+def filter_plot(stats):
+    plt.show()
+    plt.plot()
+    colors = ['red', 'blue', 'green', 'orange', 'pink']
+    color_index = 0
+    sources=[]
+    for source, prop_CT, rms_error, prop_filtered_CT, rms_filtered_error in stats:
+        arrow = plt.arrow(rms_error, prop_CT, rms_filtered_error-rms_error, prop_filtered_CT-prop_CT, color=colors[color_index])
+        color_index+=1
+        sources.append(source)
+
+    from matplotlib.lines import Line2D
+    custom_lines = [Line2D([0], [0], color=colors[0], lw=4),
+                    Line2D([0], [0], color=colors[1], lw=4),
+                    Line2D([0], [0], color=colors[2], lw=4),
+                    Line2D([0], [0], color=colors[3], lw=4)]
+    plt.legend(custom_lines, sources)
+    plt.title('Expert verified vs RMS of tag frequency difference from ALA')
+    plt.xlabel('RMS of tag frequency difference between image set & ALA')
+    plt.ylabel('Fraction of images containing cane toads')
+    plt.show()
+
 
 
 if __name__ == '__main__':
-    for source in ['inaturalist','instagram_new', 'twitter', 'flickr', 'reddit', 'inaturalist']:
+
+
+    stats = []
+
+    for source in ['flickr', 'inaturalist', 'twitter', 'reddit']:
 
         print(source)
 
@@ -201,10 +255,11 @@ if __name__ == '__main__':
             if reid == 'T' or reid == 'PT':
                 url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
         print('proportion verified cane toad')
-        print(len(url_and_tags_canetoad) / len(url_and_tags))
+        prop_CT = len(url_and_tags_canetoad) / len(url_and_tags)
+        print(prop_CT)
 
 
-        url_and_tags_filtered = filter(url_and_tags, check_rms=True)
+        url_and_tags_filtered, rms_error, rms_filtered_error = filter(url_and_tags, check_rms=True)
 
 
 
@@ -213,8 +268,12 @@ if __name__ == '__main__':
             if reid == 'T' or reid == 'PT':
                 url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
         print('proportion verified cane toad filtered')
-        print(len(url_and_tags_canetoad) / len(url_and_tags_filtered))
+        prop_filtered_CT = len(url_and_tags_canetoad) / len(url_and_tags_filtered)
+        print(prop_filtered_CT)
 
+        stats.append([source, prop_CT, rms_error, prop_filtered_CT, rms_filtered_error])
+
+    filter_plot(stats)
 
 
 

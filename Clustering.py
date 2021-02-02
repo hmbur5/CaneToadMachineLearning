@@ -461,19 +461,21 @@ class comparing_clusters:
             for url in self.urlDict.keys():
                 tags, coords, prediction, reid, note = self.urlDict[url]
                 if lbl.get_text() == url:
+                    st=''
                     #st=r'{'+ note+'}'
 
 
-                    if reid == 'T' or reid == 'PT':
+                    '''if reid == 'T' or reid == 'PT':
                         st = r'\textcolor{green}{-}'
                     else:
                         st = r'\textcolor{red}{-}'
 
                     if note!= '':
                         st += r'\textcolor{yellow}{-}'
-                    elif note!= 'xTOAD RACE':
-                        st += r'\textcolor{purple}{-}'
-                    if note == 'xTOAD RACE':
+                    #elif note!= 'xTOAD RACE':
+                    #    st += r'\textcolor{purple}{-}'
+                    #if note == 'xTOAD RACE':
+                    else:
                         st += r'\textcolor{gray}{-}'
 
 
@@ -483,7 +485,7 @@ class comparing_clusters:
                     if lbl.get_text() in filtered_urls:
                         st += r'\textcolor{blue}{-}'
                     else:
-                        st += r'\textcolor{orange}{-}'
+                        st += r'\textcolor{orange}{-}'''
 
 
 
@@ -506,7 +508,7 @@ from createTagsFiles import getTagsFromPredictions
 with open('./clustering/alaComparison.obj', 'rb') as pickle_file:
     alaComparison = pickle.load(pickle_file)
 
-
+filtering_stats = []
 for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
 
     print(source)
@@ -589,11 +591,15 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
         if alaComparison.averageALAdistance(sub_cluster, source) < 0.80:
             filtered_urls += sub_cluster'''
 
+
+    # filter (not using clusters) based on individual image compared to ALA spread
     alaComparison.createAlaSpread()
-    #filtered_urls = []
-    #for sub_cluster in dataframe.columns:
-    #    if alaComparison.compareToSpread(sub_cluster, source) < 0.80:
-    #        filtered_urls.append(sub_cluster)
+    filtered_urls = []
+    for sub_cluster in dataframe.columns:
+        if alaComparison.compareToSpread(sub_cluster, source) < 0.80:
+            filtered_urls.append(sub_cluster)
+    filtered_urls = list(set(filtered_urls))
+    filtering_stats.append([source, dataframe.columns, filtered_urls])
 
 
         #print(alaComparison.averageALAdistance(sub_cluster, source))
@@ -616,4 +622,64 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
 
 
 
+
+# create filter arrow plot
+from Filtering import filter
+
+stats = []
+for source, unfiltered, filtered in filtering_stats:
+
+    url_and_tags = getTagsFromPredictions(source)
+    url_and_tags_filtered = []
+    for url, tags, coords, prediction, reid in url_and_tags:
+        if url in filtered:
+            url_and_tags_filtered.append([url, tags, coords, prediction, reid])
+
+
+    url_and_tags_filtered, rms_error, rms_filtered_error = filter(url_and_tags,filter=False,url_and_tags_filtered=url_and_tags_filtered, check_rms=True)
+
+    url_and_tags_canetoad = []
+    for url, tags, coords, prediction, reid in url_and_tags:
+        if reid == 'T' or reid == 'PT':
+            url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
+    print('proportion verified cane toad')
+    prop_CT = len(url_and_tags_canetoad) / len(url_and_tags)
+    print(prop_CT)
+
+    url_and_tags_canetoad = []
+    for url, tags, coords, prediction, reid in url_and_tags_filtered:
+        if reid == 'T' or reid == 'PT':
+            url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
+    print('proportion verified cane toad filtered')
+    prop_filtered_CT = len(url_and_tags_canetoad) / len(url_and_tags_filtered)
+    print(prop_filtered_CT)
+
+    stats.append([source, prop_CT, rms_error, prop_filtered_CT, rms_filtered_error])
+
+
+plt.show()
+plt.plot()
+colors = ['red', 'blue', 'green', 'orange', 'purple']
+color_index = 0
+sources = []
+
+for source, prop_CT, rms_error, prop_filtered_CT, rms_filtered_error in stats:
+    arrow = plt.arrow(rms_error, prop_CT, rms_filtered_error - rms_error,
+                      prop_filtered_CT - prop_CT , color=colors[color_index])
+    color_index += 1
+    sources.append(source)
+
+
+from matplotlib.lines import Line2D
+
+custom_lines = [Line2D([0], [0], color=colors[0], lw=4),
+                Line2D([0], [0], color=colors[1], lw=4),
+                Line2D([0], [0], color=colors[2], lw=4),
+                Line2D([0], [0], color=colors[3], lw=4),
+                Line2D([0], [0], color=colors[4], lw=4)]
+plt.legend(custom_lines, sources)
+plt.title('Expert verified vs RMS of tag frequency difference from ALA')
+plt.xlabel('RMS of tag frequency difference between image set and ALA')
+plt.ylabel('Fraction of images containing cane toads')
+plt.show()
 
