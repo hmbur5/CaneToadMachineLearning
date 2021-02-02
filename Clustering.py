@@ -412,10 +412,11 @@ class comparing_clusters:
                                                 get_leaves=True)
 
 
-
-
-
-
+        all_urls = tree[list(distance_tree.keys())[-1]]
+        labels = []
+        for url in all_urls:
+            labels += alaComparison.CompareImageLabels[source][url]
+        all_unique, all_counts = np.unique(labels, return_counts=True)
 
         for i, d in zip(dn['icoord'], dn['dcoord']):
 
@@ -428,12 +429,24 @@ class comparing_clusters:
                             labels += alaComparison.CompareImageLabels[source][url]
                         unique, counts = np.unique(labels, return_counts=True)
                         most_common_label = unique[np.argmax(counts)]
-                        print(most_common_label)
+
+                        # finding most unique label based on percentage difference from all urls
+                        max_difference = 0
+                        most_unique_label = ''
+                        for label in unique:
+                            difference = counts[list(unique).index(label)]/max(counts) - all_counts[list(all_unique).index(label)]/max(all_counts)
+                            if difference>max_difference:
+                                max_difference = difference
+                                most_unique_label = label
+
 
                         x = 0.5 * sum(i[1:3])
                         y = d[1]
                         #plt.plot(x, y, 'bo')
-                        plt.annotate("%s %d%%" % (most_common_label, int(100*max(counts)/len(urls))), (x, y), xytext=(0, -8),
+                        #plt.annotate("%s %d%%\n%s" % (most_common_label,100*max(counts)/len(urls),most_unique_label), (x, y), xytext=(0, -2),
+                        #             textcoords='offset points',
+                        #             va='top', ha='center')
+                        plt.annotate("%s" %(most_unique_label), (x, y), xytext=(0, -2),
                                      textcoords='offset points',
                                      va='top', ha='center')
 
@@ -558,7 +571,7 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
     # remove last cluster from the list (as this is just everything
     keys = list(tree.keys())
     keys = keys[0:-1]
-    for key in keys[0:dataframe.shape[0]]:
+    for key in keys:#[0:dataframe.shape[0]]:
         sub_cluster = tree[key]
         rms = alaComparison.rms(sub_cluster)
         '''print('image list')
@@ -567,20 +580,20 @@ for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
         print(alaComparison.proportionCaneToads(sub_cluster))
         print('average counts')'''
 
-        if alaComparison.averageALAdistance(sub_cluster, source) < 0.95:
-            filtered_urls += sub_cluster
-
-    filtered_urls = []
-    for sub_cluster in dataframe.columns:
-        sub_cluster = [sub_cluster]
         if alaComparison.averageALAdistance(sub_cluster, source) < 0.80:
             filtered_urls += sub_cluster
 
-    alaComparison.createAlaSpread()
-    filtered_urls = []
+    '''filtered_urls = []
     for sub_cluster in dataframe.columns:
-        if alaComparison.compareToSpread(sub_cluster, source) < 0.80:
-            filtered_urls.append(sub_cluster)
+        sub_cluster = [sub_cluster]
+        if alaComparison.averageALAdistance(sub_cluster, source) < 0.80:
+            filtered_urls += sub_cluster'''
+
+    alaComparison.createAlaSpread()
+    #filtered_urls = []
+    #for sub_cluster in dataframe.columns:
+    #    if alaComparison.compareToSpread(sub_cluster, source) < 0.80:
+    #        filtered_urls.append(sub_cluster)
 
 
         #print(alaComparison.averageALAdistance(sub_cluster, source))
