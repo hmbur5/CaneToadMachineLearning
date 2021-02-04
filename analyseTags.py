@@ -1,4 +1,5 @@
 from createTagsFiles import getTagsFromPredictions
+from addGoogleLabels import getLabelsFromPredictions
 from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
@@ -81,14 +82,16 @@ with open('tags/summary.csv', 'w') as myfile:
                  'proportion of images with animal and human', 'proportion of verified predator photos',
                  'colour distance histogram max'])
 
-    for source in ['ala', 'inaturalist', 'instagram_new', 'twitter', 'flickr', 'reddit', 'inaturalist']:
+    for source in ['ala', 'inaturalist', 'instagram_all', 'twitter', 'flickr', 'reddit', 'inaturalist']:
         row_to_add = []
 
         print(source)
         row_to_add.append(source)
 
-
-        url_and_tags = getTagsFromPredictions(source)
+        # if comparing objects, use getTags, if comparing labels, use getLabels
+        # returns same shape list just there are more detailed names in the tags list.
+        #url_and_tags = getLabelsFromPredictions(source)
+        url_and_tags = getLabelsFromPredictions(source)
 
         # remove any images without tags
         url_and_tags_new = []
@@ -196,7 +199,7 @@ with open('tags/summary.csv', 'w') as myfile:
 
 
         # compare distributions
-        if source == 'instagram_new':
+        if source == 'instagram_all':
             tagsListInstagram = tagsList
             no_imagesInstagram = len(url_and_tags)
         if source == 'twitter':
@@ -574,11 +577,11 @@ with open('tags/summary.csv', 'w') as myfile:
 labels = []
 countsDict = {}
 
-for source in ['ala','instagram_new','flickr','twitter','reddit','inaturalist']:
+for source in ['ala','instagram_all','flickr','twitter','reddit','inaturalist']:
     if source == 'ala':
         tagsList = tagsListALA
         no_images = no_imagesALA
-    if source == 'instagram_new':
+    if source == 'instagram_all':
         tagsList = tagsListInstagram
         no_images = no_imagesInaturalist
     if source == 'flickr':
@@ -653,7 +656,7 @@ for i in sorted_indices:
 plt.clf()
 plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
 plt.ylim([-0.5, 0.5])
-for source in ['flickr','instagram_new','twitter','reddit','inaturalist']:
+for source in ['flickr','instagram_all','twitter','reddit','inaturalist']:
     counts = []
     for label in sortedLabels:
         for tuple in countsDict[label]:

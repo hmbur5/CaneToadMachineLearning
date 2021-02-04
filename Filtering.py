@@ -3,12 +3,13 @@ import urllib
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from addGoogleLabels import getLabelsFromPredictions
 
 
 
-def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_tags_filtered = [], check_rms = False):
+def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_tags_filtered = [], check_rms = False):
     # get ala images
-    url_and_tags = getTagsFromPredictions(filterSource)
+    url_and_tags = getLabelsFromPredictions(filterSource)
 
     # remove any images without tags
     url_and_tags_new = []
@@ -53,6 +54,7 @@ def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_t
     for url, tags, coords, prediction, reid in url_and_tags:
         tagsList += list(set(tags))
 
+
     labels, counts = np.unique(tagsList, return_counts=True)
     for label in ALAlabels:
         labels = np.append(labels, label)
@@ -96,8 +98,8 @@ def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_t
 
     # filtering
     if filter:
-
-
+        '''
+        # filtering based on deleting images with tags whose error is above some threshold
         threshold = 0.05
         above = []
         below = []
@@ -124,7 +126,40 @@ def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_t
                     break
             if not filter:
                 url_and_tags_filtered.append([url, tags, coords, prediction, reid])
+        '''
 
+        # filtering based on a metric of how the tags in each image compare to ala distribution
+
+        metricDict = {}
+        values = []
+        url_and_tags_filtered = []
+        for url, tags, coords, prediction, reid in url_and_tags:
+            value = 0
+            for index, count in enumerate(counts):
+                if labels[index] in tags:
+                    # if there are less of this tag in image set than ala and it appears in this photo, increase value
+                    # based on the frequency difference (which would be negative)
+                    value -= count
+                else:
+                    # if the tag doesn't appear
+                    value += count
+            metricDict[url] = value
+            values.append(value)
+
+        print(metricDict)
+
+        # based on initial rms error (which as shown is proportional to number of desired images), choose threshold
+        values = np.sort(values)
+        # if rms error = 0.05, we want to cut half of the images
+        cut = rms_error/0.1
+        print(cut)
+        index = int(cut*len(values))
+        threshold = values[index]
+
+        url_and_tags_filtered = []
+        for url, tags, coords, prediction, reid in url_and_tags:
+            if metricDict[url]>threshold:
+                url_and_tags_filtered.append([url, tags, coords, prediction, reid])
 
     if check_rms:
         tagsList = []
@@ -173,13 +208,13 @@ def filter(url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_t
         print('RMS filtered error from ala')
         print(rms_filtered_error)
 
-        ticks = range(len(sortedCounts))
+        '''ticks = range(len(sortedCounts))
         plt.clf()
         plt.bar(ticks[0:25], sortedCounts[0:25], align='center')
         plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
         plt.title(source)
         plt.ylim([-0.5, 0.5])
-        plt.show()
+        plt.show()'''
 
 
     return (url_and_tags_filtered, rms_error, rms_filtered_error)
@@ -221,8 +256,10 @@ if __name__ == '__main__':
 
         print(source)
 
-
-        url_and_tags = getTagsFromPredictions(source)
+        # if comparing objects, use getTags, if comparing labels, use getLabels
+        # returns same shape list just there are more detailed names in the tags list.
+        # url_and_tags = getTagsFromPrediction(source)
+        url_and_tags = getLabelsFromPredictions(source)
 
         # remove any images without tags
         url_and_tags_new = []
@@ -259,7 +296,7 @@ if __name__ == '__main__':
         print(prop_CT)
 
 
-        url_and_tags_filtered, rms_error, rms_filtered_error = filter(url_and_tags, check_rms=True)
+        url_and_tags_filtered, rms_error, rms_filtered_error = filter(source, url_and_tags, check_rms=True)
 
 
 

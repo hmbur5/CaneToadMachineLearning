@@ -509,7 +509,7 @@ with open('./clustering/alaComparison.obj', 'rb') as pickle_file:
     alaComparison = pickle.load(pickle_file)
 
 filtering_stats = []
-for source in ['flickr','twitter','instagram_all', 'reddit', 'inaturalist']:
+for source in ['flickr','twitter', 'reddit', 'inaturalist']:
 
     print(source)
 
@@ -636,7 +636,7 @@ for source, unfiltered, filtered in filtering_stats:
             url_and_tags_filtered.append([url, tags, coords, prediction, reid])
 
 
-    url_and_tags_filtered, rms_error, rms_filtered_error = filter(url_and_tags,filter=False,url_and_tags_filtered=url_and_tags_filtered, check_rms=True)
+    url_and_tags_filtered, rms_error, rms_filtered_error = filter(source, url_and_tags,filter=False,url_and_tags_filtered=url_and_tags_filtered, check_rms=True)
 
     url_and_tags_canetoad = []
     for url, tags, coords, prediction, reid in url_and_tags:
@@ -658,6 +658,9 @@ for source, unfiltered, filtered in filtering_stats:
 
 
 plt.show()
+matplotlib.rcdefaults()
+
+
 plt.plot()
 colors = ['red', 'blue', 'green', 'orange', 'purple']
 color_index = 0
