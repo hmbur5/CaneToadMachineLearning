@@ -583,7 +583,7 @@ for source in ['ala','instagram_all','flickr','twitter','reddit','inaturalist']:
         no_images = no_imagesALA
     if source == 'instagram_all':
         tagsList = tagsListInstagram
-        no_images = no_imagesInaturalist
+        no_images = no_imagesInstagram
     if source == 'flickr':
         tagsList = tagsListFlickr
         no_images = no_imagesFlickr

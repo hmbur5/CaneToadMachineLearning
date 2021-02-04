@@ -9,7 +9,10 @@ from addGoogleLabels import getLabelsFromPredictions
 
 def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, url_and_tags_filtered = [], check_rms = False):
     # get ala images
-    url_and_tags = getLabelsFromPredictions(filterSource)
+    # if comparing objects, use getTags, if comparing labels, use getLabels
+    # returns same shape list just there are more detailed names in the tags list.
+    #url_and_tags = getLabelsFromPredictions(filterSource)
+    url_and_tags = getTagsFromPredictions(filterSource)
 
     # remove any images without tags
     url_and_tags_new = []
@@ -143,15 +146,55 @@ def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, u
                 else:
                     # if the tag doesn't appear
                     value += count
+                    pass
             metricDict[url] = value
             values.append(value)
 
-        print(metricDict)
+
+        # printing bars to show how order of metric compares to actual images of cane toads/not cane toads
+        orderedUrls = []
+        values = np.sort(values)
+        for value in values:
+            for url, tags, coords, prediction, reid in url_and_tags:
+                if metricDict[url] == value:
+                    orderedUrls.append([url, reid])
+        uniqueOrderedUrls = []
+        for item in orderedUrls:
+            if item not in uniqueOrderedUrls:
+                uniqueOrderedUrls.append(item)
+
+
+
+
+        xVal = 0.05
+        global yVal
+        global xMax
+        from termcolor import colored
+        for url, reid in uniqueOrderedUrls:
+            if reid=='T' or reid=='PT':
+                plt.text(xVal, yVal,
+                         '|',
+                         color="green")
+            else:
+                plt.text(xVal, yVal,
+                         '|',
+                         color="red")
+            xVal+=0.07
+        plt.text(xVal/2, yVal+0.03,source,color='black')
+        plt.ylim(0,yVal)
+        if xVal>xMax:
+            plt.xlim(0, xVal+0.05)
+            xMax = xVal
+        yVal+=0.08
+
+
+
+
 
         # based on initial rms error (which as shown is proportional to number of desired images), choose threshold
         values = np.sort(values)
         # if rms error = 0.05, we want to cut half of the images
-        cut = rms_error/0.1
+        cut = rms_error/0.2
         print(cut)
         index = int(cut*len(values))
         threshold = values[index]
@@ -251,6 +294,11 @@ if __name__ == '__main__':
 
 
     stats = []
+    global yVal
+    global xMax
+    xMax = 0
+    yVal = 0.05
+    plt.figure()
 
     for source in ['flickr', 'inaturalist', 'twitter', 'reddit']:
 
@@ -258,8 +306,8 @@ if __name__ == '__main__':
 
         # if comparing objects, use getTags, if comparing labels, use getLabels
         # returns same shape list just there are more detailed names in the tags list.
-        # url_and_tags = getTagsFromPrediction(source)
-        url_and_tags = getLabelsFromPredictions(source)
+        url_and_tags = getTagsFromPredictions(source)
+        #url_and_tags = getLabelsFromPredictions(source)
 
         # remove any images without tags
         url_and_tags_new = []
