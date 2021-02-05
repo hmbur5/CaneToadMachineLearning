@@ -446,9 +446,9 @@ class comparing_clusters:
                         #plt.annotate("%s %d%%\n%s" % (most_common_label,100*max(counts)/len(urls),most_unique_label), (x, y), xytext=(0, -2),
                         #             textcoords='offset points',
                         #             va='top', ha='center')
-                        plt.annotate("%s" %(most_unique_label), (x, y), xytext=(0, -2),
-                                     textcoords='offset points',
-                                     va='top', ha='center')
+                        #plt.annotate("%s" %(most_unique_label), (x, y), xytext=(0, -2),
+                        #             textcoords='offset points',
+                        #             va='top', ha='center')
 
 
 
@@ -465,7 +465,7 @@ class comparing_clusters:
                     #st=r'{'+ note+'}'
 
 
-                    '''if reid == 'T' or reid == 'PT':
+                    if reid == 'T' or reid == 'PT':
                         st = r'\textcolor{green}{-}'
                     else:
                         st = r'\textcolor{red}{-}'
@@ -476,7 +476,7 @@ class comparing_clusters:
                     #    st += r'\textcolor{purple}{-}'
                     #if note == 'xTOAD RACE':
                     else:
-                        st += r'\textcolor{gray}{-}'
+                        st += r'\textcolor{purple}{-}'
 
 
                     
@@ -485,7 +485,7 @@ class comparing_clusters:
                     if lbl.get_text() in filtered_urls:
                         st += r'\textcolor{blue}{-}'
                     else:
-                        st += r'\textcolor{orange}{-}'''
+                        st += r'\textcolor{orange}{-}'
 
 
 

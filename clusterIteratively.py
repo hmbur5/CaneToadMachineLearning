@@ -70,21 +70,13 @@ def plotCluster(dataframe, tree, distance_tree, inCluster, title):
     clustered = scipy.cluster.hierarchy.ward(condDistMat)
 
     plt.clf()
-
     dn = scipy.cluster.hierarchy.dendrogram(clustered, color_threshold=0, labels=list(dataframe.columns),
                                             above_threshold_color='lightblue', distance_sort='ascending',
                                             get_leaves=True)
 
-    all_urls = tree[list(distance_tree.keys())[-1]]
-    labels = []
-    for url in all_urls:
-        for item in url_and_tags:
-            if item[0]== url:
-                labels += item[1]
-    all_unique, all_counts = np.unique(labels, return_counts=True)
-
     for i, d in zip(dn['icoord'], dn['dcoord']):
 
+        ''' # if wanting to add most common label among clusters (this uses too much memory for large image sets)
         for dist_key in distance_tree.keys():
             if d[1] == distance_tree[dist_key]:
                 urls = tree[dist_key]
@@ -104,8 +96,10 @@ def plotCluster(dataframe, tree, distance_tree, inCluster, title):
                     plt.annotate("%s %d%%" % (most_common_label,100*max(counts)/len(urls)), (x, y), xytext=(0, -2),
                                  textcoords='offset points',
                                  va='top', ha='center')
+        '''
 
     ax = plt.gca()
+
     xlbls = ax.get_xticklabels()
     for lbl in xlbls:
         lbl.set_fontsize('x-large')
@@ -122,7 +116,8 @@ def plotCluster(dataframe, tree, distance_tree, inCluster, title):
                     reid = item[4]
                 except IndexError:
                     # example url
-                    st += r'\textcolor{black}{ -}'
+                    pass
+                    st += r'\textcolor{purple}{-}'
                 else:
                     if reid == 'T' or reid == 'PT':
                         st += r'\textcolor{green}{-}'
@@ -189,14 +184,14 @@ if __name__ == '__main__':
     example_labels = []
     while len(example_labels) == 0:
         # add example image
+        ''''''
         example_url = input('Enter url of example image: ')
 
         source = types.ImageSource(image_uri=example_url)
 
         image = types.Image(source=source)
 
-        # adjust based on whether using labels or objects on google cloud vision
-        '''# Performs label detection on the image file
+        # Performs label detection on the image file
         response = client.label_detection(image=image)
 
         labels = response.label_annotations
@@ -205,119 +200,124 @@ if __name__ == '__main__':
             if label.description not in example_labels:
                 example_labels.append(label.description)
 
-        print(example_labels)'''
-
+        '''
         response = client.object_localization(image=image)
         for tag in response.localized_object_annotations:
             example_labels.append(tag.name)
         example_labels = list(set(example_labels))
+        '''
 
         print(example_labels)
-
         # use the image provided it had at least one label
         if len(example_labels) == 0:
             print('No labels were identified on google cloud vision. Try a different image. ')
 
-
-
-    website = 'flickr'
-
-    global url_and_tags
-    url_and_tags = getTagsFromPredictions(website)
-
-    # remove any images without labels
-    url_and_tags_new = []
-    for index, element in enumerate(url_and_tags):
-        if len(element[1]) > 0:
-            url_and_tags_new.append([element[0], list(set(element[1])), element[2], element[3], element[4]])
-    url_and_tags = url_and_tags_new
-
-    # remove duplicate images
-    url_and_tags_new = []
-    open_images = []
-    for index, element in enumerate(url_and_tags):
-        image_url = element[0]
-        try:
-            img = urllib.request.urlopen(image_url)
-            img = Image.open(img)
-            if img not in open_images:
-                open_images.append(img)
-                url_and_tags_new.append(element)
-            else:
-                pass
-                # print('duplicate')
-        except urllib.error.HTTPError:
-            print(image_url)
-    url_and_tags = url_and_tags_new
-
-
-    url_and_tags.append([example_url, example_labels])
-
-    image_urls = []
-    disMat = np.zeros((len(url_and_tags), len(url_and_tags)))
-    for index1, item1 in enumerate(url_and_tags):
-        image_urls.append(item1[0])
-
-        for index2, item2 in enumerate(url_and_tags):
-            label1 = item1[1]
-            label2 = item2[1]
-            # find proportion of keywords in each image that do not overlap
-            uniqueLabels = list(set(label1 + label2))
-            notCommonLabels = 2 * len(uniqueLabels) - len(label1) - len(label2)
-            distance = notCommonLabels / (len(label1) + len(label2))
-
-            disMat[index1, index2] = distance
-            disMat[index2, index1] = distance
-
-            if index1 == index2 and distance != 0:
-                print(label1)
-                print(label2)
-
-
-    dataframe = pd.DataFrame(disMat, columns=image_urls)
-
-
-    image_order = []
-
-
-    # iteratively clustering based on inCluster/outCluster compared to example url
-    clustering_urls = image_urls
-    iteration = 0
-    while len(clustering_urls)>3:
-        iteration +=1
-        inCluster, outCluster = identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
-        clustering_urls = outCluster+[example_url]
-
-        if len(inCluster)==0:
-            image_order += outCluster
-            break
-
-        inCluster.remove(example_url)
-        image_order += inCluster
-
-
     plt.figure()
-    xVal = 0.05
     yVal = 0.5
+    xMax = 0
 
-    print(len(image_order))
+    for website in ['flickr', 'inaturalist', 'twitter', 'reddit', 'instagram_all']:
 
-    for url in image_order:
-        for item in url_and_tags[0:-1]:
-            if item[0]==url:
-                reid = item[4]
-        if reid == 'T' or reid == 'PT':
-            plt.text(xVal, yVal,
-                     '|',
-                     color="green")
-        else:
-            plt.text(xVal, yVal,
-                     '|',
-                     color="red")
-        xVal += 0.07
-    plt.text(xVal / 2, yVal + 0.03, website, color='black')
-    plt.ylim(0, yVal)
-    plt.xlim(0, xVal+0.05)
+        global url_and_tags
+        url_and_tags = getLabelsFromPredictions(website)
+
+        # remove any images without labels
+        url_and_tags_new = []
+        for index, element in enumerate(url_and_tags):
+            if len(element[1]) > 0:
+                url_and_tags_new.append([element[0], list(set(element[1])), element[2], element[3], element[4]])
+        url_and_tags = url_and_tags_new
+
+        # remove duplicate images
+        url_and_tags_new = []
+        open_images = []
+        for index, element in enumerate(url_and_tags):
+            image_url = element[0]
+            try:
+                img = urllib.request.urlopen(image_url)
+                img = Image.open(img)
+                if img not in open_images:
+                    open_images.append(img)
+                    url_and_tags_new.append(element)
+                else:
+                    pass
+                    # print('duplicate')
+            except urllib.error.HTTPError:
+                print(image_url)
+        url_and_tags = url_and_tags_new
+
+
+        url_and_tags.append([example_url, example_labels])
+
+        image_urls = []
+        disMat = np.zeros((len(url_and_tags), len(url_and_tags)))
+        for index1, item1 in enumerate(url_and_tags):
+            image_urls.append(item1[0])
+
+            for index2, item2 in enumerate(url_and_tags):
+                label1 = item1[1]
+                label2 = item2[1]
+                # find proportion of keywords in each image that do not overlap
+                uniqueLabels = list(set(label1 + label2))
+                notCommonLabels = 2 * len(uniqueLabels) - len(label1) - len(label2)
+                distance = notCommonLabels / (len(label1) + len(label2))
+
+                disMat[index1, index2] = distance
+                disMat[index2, index1] = distance
+
+                if index1 == index2 and distance != 0:
+                    print(label1)
+                    print(label2)
+
+
+        dataframe = pd.DataFrame(disMat, columns=image_urls)
+
+
+        image_order = []
+
+
+        # iteratively clustering based on inCluster/outCluster compared to example url
+        clustering_urls = image_urls
+        iteration = 0
+        while len(clustering_urls)>3:
+            iteration +=1
+            inCluster, outCluster = identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
+            clustering_urls = outCluster+[example_url]
+
+            if len(inCluster)==0:
+                image_order += outCluster
+                break
+
+            inCluster.remove(example_url)
+            image_order += inCluster
+
+
+        xVal = 0.05
+
+        print(len(image_order))
+
+        image_order.reverse()
+
+        for url in image_order:
+            for item in url_and_tags[0:-1]:
+                if item[0]==url:
+                    reid = item[4]
+            if reid == 'T' or reid == 'PT':
+                plt.text(xVal, yVal,
+                         '|',
+                         color="green")
+            else:
+                plt.text(xVal, yVal,
+                         '|',
+                         color="red")
+            xVal += 0.07
+        if xVal>xMax:
+            xMax = xVal
+        plt.text(xVal / 2, yVal + 0.03, website, color='black')
+        plt.ylim(0, yVal)
+        plt.xlim(0, xMax+0.05)
+        yVal += 0.08
+
     plt.show()
 
 
