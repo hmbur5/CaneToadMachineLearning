@@ -194,7 +194,7 @@ def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, u
         # based on initial rms error (which as shown is proportional to number of desired images), choose threshold
         values = np.sort(values)
         # if rms error = 0.05, we want to cut half of the images
-        cut = rms_error/0.2
+        cut = rms_error/0.1
         print(cut)
         index = int(cut*len(values))
         threshold = values[index]
@@ -300,7 +300,7 @@ if __name__ == '__main__':
     yVal = 0.05
     plt.figure()
 
-    for source in ['flickr', 'inaturalist', 'twitter', 'reddit']:
+    for source in ['flickr', 'inaturalist', 'twitter', 'reddit', 'instagram_all']:
 
         print(source)
 
