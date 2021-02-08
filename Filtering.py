@@ -3,6 +3,7 @@ import urllib
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 from addGoogleLabels import getLabelsFromPredictions
 
 
@@ -193,8 +194,8 @@ def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, u
 
         # based on initial rms error (which as shown is proportional to number of desired images), choose threshold
         values = np.sort(values)
-        # if rms error = 0.05, we want to cut half of the images
-        cut = rms_error/0.1
+        # if rms error = 0.1, we want to cut half of the images
+        cut = rms_error/0.2
         print(cut)
         index = int(cut*len(values))
         threshold = values[index]
@@ -307,6 +308,7 @@ if __name__ == '__main__':
         # if comparing objects, use getTags, if comparing labels, use getLabels
         # returns same shape list just there are more detailed names in the tags list.
         url_and_tags = getTagsFromPredictions(source)
+        random.shuffle(url_and_tags)
         #url_and_tags = getLabelsFromPredictions(source)
 
         # remove any images without tags

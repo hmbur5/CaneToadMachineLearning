@@ -8,6 +8,7 @@ import pandas as pd
 import scipy
 import scipy.spatial
 import scipy.cluster
+import random
 import matplotlib.pyplot as plt
 import os
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/Users/hannahburke/Documents/CaneToadMachineLearning/keys.json"
@@ -17,7 +18,7 @@ from google.cloud.vision import types
 # Instantiates a client
 client = vision.ImageAnnotatorClient()
 
-plotClustersBool = True
+plotClustersBool = False
 
 if plotClustersBool:
     import matplotlib
@@ -117,7 +118,7 @@ def plotCluster(dataframe, tree, distance_tree, inCluster, title):
                 except IndexError:
                     # example url
                     pass
-                    st += r'\textcolor{purple}{-}'
+                    st += r'\textcolor{black}{-}'
                 else:
                     if reid == 'T' or reid == 'PT':
                         st += r'\textcolor{green}{-}'
@@ -149,14 +150,13 @@ def identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
     '''
     indices = [dataframe.columns.get_loc(c) for c in clustering_urls if c in dataframe]
     subsetDF = dataframe.loc[indices, clustering_urls]
-    print(np.shape(subsetDF.values))
     tree, distance_tree = create_tree(subsetDF)
     keys = list(tree.keys())
 
     maxDist = distance_tree[keys[-1]]
     inCluster = []
     # finding cluster with example image that is below distance threshold
-    for distThresh in [1/3*maxDist, 1/2*maxDist]:
+    for distThresh in [1/3*maxDist]:
         for key in keys[0:-2]:
             sub_cluster = tree[key]
             if len(sub_cluster)>len(inCluster):
@@ -169,7 +169,6 @@ def identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
     outCluster = tree[keys[-1]]
     for image in inCluster:
         outCluster.remove(image)
-    print(len(outCluster)+len(inCluster))
 
     if plotClustersBool:
         plotCluster(subsetDF, tree, distance_tree, inCluster, website+' iteration '+str(iteration))
@@ -212,14 +211,15 @@ if __name__ == '__main__':
         if len(example_labels) == 0:
             print('No labels were identified on google cloud vision. Try a different image. ')
 
-    plt.figure()
-    yVal = 0.5
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    yVal = 0.2
     xMax = 0
 
-    for website in ['flickr', 'inaturalist', 'twitter', 'reddit', 'instagram_all']:
+    for website in ['flickr', 'inaturalist', 'twitter', 'reddit']:
 
         global url_and_tags
         url_and_tags = getLabelsFromPredictions(website)
+        random.shuffle(url_and_tags)
 
         # remove any images without labels
         url_and_tags_new = []
@@ -231,6 +231,7 @@ if __name__ == '__main__':
         # remove duplicate images
         url_and_tags_new = []
         open_images = []
+        maxLabels = 0
         for index, element in enumerate(url_and_tags):
             image_url = element[0]
             try:
@@ -239,6 +240,8 @@ if __name__ == '__main__':
                 if img not in open_images:
                     open_images.append(img)
                     url_and_tags_new.append(element)
+                    if len(element[1])>maxLabels:
+                        maxLabels = len(element[1])
                 else:
                     pass
                     # print('duplicate')
@@ -262,6 +265,9 @@ if __name__ == '__main__':
                 notCommonLabels = 2 * len(uniqueLabels) - len(label1) - len(label2)
                 distance = notCommonLabels / (len(label1) + len(label2))
 
+                #commonLabels = [value for value in label2 if value in label1]
+                #distance = 1-len(commonLabels)/maxLabels
+
                 disMat[index1, index2] = distance
                 disMat[index2, index1] = distance
 
@@ -276,20 +282,49 @@ if __name__ == '__main__':
         image_order = []
 
 
-        # iteratively clustering based on inCluster/outCluster compared to example url
-        clustering_urls = image_urls
-        iteration = 0
-        while len(clustering_urls)>3:
-            iteration +=1
-            inCluster, outCluster = identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
-            clustering_urls = outCluster+[example_url]
+        labelsCommonDict = {}
 
-            if len(inCluster)==0:
-                image_order += outCluster
-                break
+        # add example image to each item in dictionary
+        for index in range(len(example_labels)+1):
+            labelsCommonDict[index] = [example_url]
+        ##### first order images based on number of tags in common
+        for item in url_and_tags:
+            url = item[0]
+            labels = item[1]
+            commonLabels = [value for value in labels if value in example_labels]
+            overlap = len(commonLabels)
+            #to group everything
+            #overlap = 0
+            labelsCommonDict[overlap] = labelsCommonDict[overlap]+[url]
 
-            inCluster.remove(example_url)
-            image_order += inCluster
+
+        for index in range(len(example_labels), -1, -1):
+            clustering_urls = labelsCommonDict[index]
+
+            # skip if there is nothing to compare to
+            if len(clustering_urls)<=1:
+                continue
+            iteration = 0
+
+            # iteratively clustering based on inCluster/outCluster compared to example url
+            while True:
+                iteration +=1
+                inCluster, outCluster = identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
+                clustering_urls = outCluster+[example_url]
+
+                if len(inCluster)==0:
+                    image_order += outCluster
+                    break
+
+                inCluster.remove(example_url)
+
+                # Add this cluster to removed images. Order in increasing distance from example image
+                new_order_vals = []
+                for url in inCluster:
+                    new_order_vals.append(dataframe.loc[(np.shape(dataframe.values)[0] - 1), url])
+                for index in np.argsort(new_order_vals):
+                    image_order.append(inCluster[index])
+
 
 
         xVal = 0.05
@@ -298,26 +333,100 @@ if __name__ == '__main__':
 
         image_order.reverse()
 
+        verification = []
+
         for url in image_order:
+            reid = 'Unfound'
             for item in url_and_tags[0:-1]:
                 if item[0]==url:
                     reid = item[4]
-            if reid == 'T' or reid == 'PT':
-                plt.text(xVal, yVal,
+            if reid == 'Unfound':
+                print(url)
+                continue
+            elif reid == 'T' or reid == 'PT':
+                verification.append(1)
+                ax1.text(xVal, yVal,
                          '|',
                          color="green")
             else:
-                plt.text(xVal, yVal,
+                verification.append(0)
+                ax1.text(xVal, yVal,
                          '|',
                          color="red")
             xVal += 0.07
         if xVal>xMax:
             xMax = xVal
-        plt.text(xVal / 2, yVal + 0.03, website, color='black')
-        plt.ylim(0, yVal)
-        plt.xlim(0, xMax+0.05)
-        yVal += 0.08
+        ax1.text(xVal / 2, yVal + 0.2, website, color='black')
+        ax1.set_ylim(0, yVal+1)
+        ax1.set_xlim(0, xMax+0.5)
+        #yVal += 1.3
+        print('done')
+
+
+        # plotting percentage verified as move up list
+        percentageVerified = []
+        for index in range(len(verification)-1):
+            portion = verification[index:-1]
+            percentageVerified.append(sum(portion)/len(portion))
+        ax2.plot(np.linspace(0, 1, num = len(percentageVerified)), percentageVerified)
+
+
+        # using just distance from example image
+        new_order_vals = []
+        new_image_order = []
+
+        for url in image_order:
+            new_order_vals.append(dataframe.loc[(np.shape(dataframe.values)[0] - 1), url])
+        for index in np.argsort(new_order_vals):
+            new_image_order.append(image_order[index])
+        new_image_order.reverse()
+
+
+        xVal = 0.05
+
+        verification = []
+
+        for url in new_image_order:
+            reid = 'Unfound'
+            for item in url_and_tags[0:-1]:
+                if item[0] == url:
+                    reid = item[4]
+            if reid == 'Unfound':
+                print(url)
+                continue
+            elif reid == 'T' or reid == 'PT':
+                verification.append(1)
+                ax3.text(xVal, yVal,
+                         '|',
+                         color="green")
+            else:
+                verification.append(0)
+                ax3.text(xVal, yVal,
+                         '|',
+                         color="red")
+            xVal += 0.07
+        if xVal > xMax:
+            xMax = xVal
+        ax3.text(xVal / 2, yVal + 0.2, website, color='black')
+        ax3.set_ylim(0, yVal+1)
+        ax3.set_xlim(0, xMax + 0.5)
+        yVal += 0.8
+        print('done')
+
+        # plotting percentage verified as move up list
+        percentageVerified = []
+        for index in range(len(verification) - 1):
+            portion = verification[index:-1]
+            percentageVerified.append(sum(portion) / len(portion))
+        ax4.plot(np.linspace(0, 1, num=len(percentageVerified)), percentageVerified, '--')
+
+
+
+    ax2.legend(['flickr', 'inaturalist', 'twitter', 'reddit'])
 
     plt.show()
+
+
+
 
 
