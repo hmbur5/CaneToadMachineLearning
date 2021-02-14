@@ -12,8 +12,8 @@ def filter(source, url_and_tags_comparison, filterSource = 'ala', filter=True, u
     # get ala images
     # if comparing objects, use getTags, if comparing labels, use getLabels
     # returns same shape list just there are more detailed names in the tags list.
-    #url_and_tags = getLabelsFromPredictions(filterSource)
-    url_and_tags = getTagsFromPredictions(filterSource)
+    url_and_tags = getLabelsFromPredictions(filterSource)
+    #url_and_tags = getTagsFromPredictions(filterSource)
 
     # remove any images without tags
     url_and_tags_new = []
@@ -307,9 +307,9 @@ if __name__ == '__main__':
 
         # if comparing objects, use getTags, if comparing labels, use getLabels
         # returns same shape list just there are more detailed names in the tags list.
-        url_and_tags = getTagsFromPredictions(source)
+        #url_and_tags = getTagsFromPredictions(source)
+        url_and_tags = getLabelsFromPredictions(source)
         random.shuffle(url_and_tags)
-        #url_and_tags = getLabelsFromPredictions(source)
 
         # remove any images without tags
         url_and_tags_new = []

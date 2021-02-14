@@ -10,10 +10,36 @@ import csv
 from predictFromImageUrl import predictFromImageUrl
 import time
 import datetime
+from PIL import Image
 
 
 
 def createTagsFiles(image_url_list, file_name):
+    # first delete duplicate images
+    new_image_url_list = []
+    open_images = []
+    for image_url in image_url_list:
+        try:
+            img = urllib.request.urlopen(image_url)
+            img = Image.open(img)
+            if img not in open_images:
+                open_images.append(img)
+                new_image_url_list.append(image_url)
+            else:
+                pass
+                print('duplicate')
+        except urllib.error.HTTPError:
+            print(image_url)
+        except OSError:
+            print(image_url)
+        except AttributeError as e:
+            print(image_url)
+            print(e)
+    image_url_list = new_image_url_list
+    if len(image_url_list)>250:
+        image_url_list = image_url_list[0:250]
+
+
     url_and_tags = []
     print(len(image_url_list))
     for image_url in image_url_list:
@@ -177,10 +203,10 @@ def createPredictionFiles(file_name):
 
 if __name__ == '__main__':
 
-    for file_name in ['instgramCaneToad_all']:
-        createPredictionFiles(file_name)
+    #for file_name in ['instgramCaneToad_all']:
+    #    createPredictionFiles(file_name)
 
-    exit(-1)
+    #exit(-1)
 
     # facebook
     imageUrls = []
@@ -211,30 +237,32 @@ if __name__ == '__main__':
     # extras for photo search (can include geo tag, date etc)
     extras = 'geo, url_t, url_c, date_taken'
 
-    '''photoUrls = []
+    photoUrls = []
     for pageNumber in [0,1]:
         # search limited to those with gps coordinates within australia
-        photoSearch = flickr.photos.search(text='cane toad', per_page=250, page=pageNumber, has_geo = True, extras=extras,
-                                           bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
+        photoSearch = flickr.photos.search(text='european wasp', per_page=250, page=pageNumber, has_geo = True, extras=extras)#,
+                                           #bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
         photos = photoSearch['photos']
         for element in photos['photo']:
             try:
                 photoUrls.append(element['url_c'])
             except:
                 # if larger image file doesn't exist, just use thumbnail
-                photoUrls.append(element['url_t'])'''
-    #createTagsFiles(photoUrls, 'flickr')
+                photoUrls.append(element['url_t'])
+    #createTagsFiles(photoUrls, 'flickr_european_wasp')
     #exit(-1)
 
     #ala
-    images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
-    #createTagsFiles(images[0:500],'ala')
+    images=listOfAlaImageUrls('ala image urls/ala_european_wasp.csv')
+    #createTagsFiles(images[0:500],'ala_european_wasp')
+    #exit(-1)
 
 
     # inaturalist
-    df = pd.read_csv("ala image urls/iNaturalist cane toad.csv")
+    df = pd.read_csv("ala image urls/iNaturalist_european_wasp.csv")
     saved_column = list(df['image_url'])
-    #createTagsFiles(saved_column[0:500], 'inaturalist')
+    createTagsFiles(saved_column[0:500], 'inaturalist_european_wasp')
+    exit(-1)
 
 
     # instagram

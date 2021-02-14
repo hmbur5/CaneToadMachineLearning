@@ -156,7 +156,7 @@ def identifyCluster(dataframe, clustering_urls, example_url, iteration, website)
     maxDist = distance_tree[keys[-1]]
     inCluster = []
     # finding cluster with example image that is below distance threshold
-    for distThresh in [1/3*maxDist]:
+    for distThresh in [1, 1/3*maxDist]:
         for key in keys[0:-2]:
             sub_cluster = tree[key]
             if len(sub_cluster)>len(inCluster):
