@@ -1,3 +1,6 @@
+import mxnet as mx
+import gluoncv
+
 import os
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/Users/hannahburke/Documents/CaneToadMachineLearning/keys.json"
 # Imports the Google Cloud client library
@@ -12,12 +15,13 @@ import urllib.parse
 import requests
 from createTagsFiles import getTagsFromPredictions
 import csv
+import cv2
+import numpy as np
 
 
-
-def getLabelsFromPredictions(file_name, return_note=False):
+def getGluonFromPredictions(file_name, return_note=False):
     url_and_labels = []
-    with open('predictions/reid/' + file_name +'_labels.csv', "r") as csv_file:
+    with open('predictions/reid/' + file_name +'_gluon.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -69,27 +73,42 @@ def getLabelsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['flickr', 'twitter', 'inaturalist']:
+    for website in ['reddit', 'instagram_all']:
+        print(website)
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []
 
         for url, tags, coords, prediction, reid, note in url_and_tags:
 
-            source = types.ImageSource(image_uri=url)
-
-            image = types.Image(source=source)
-
-            # Performs label detection on the image file
-            response = client.label_detection(image=image)
-
-            labels = response.label_annotations
-
+            # you may modify it to switch to another model. The name is case-insensitive
+            model_name = 'ResNet50_v1d'
+            # download and load the pre-trained model
+            net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
+            # load image
+            try:
+                fname = mx.test_utils.download(url, fname='currentImage.jpg', overwrite=True)
+            except Exception as e:
+                print(e)
+                print(url)
+                continue
+            img = mx.ndarray.array(cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB))
+            # apply default data preprocessing
+            transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
+            # run forward pass to obtain the predicted score for each class
+            pred = net(transformed_img)
+            # map predicted values to probability by softmax
+            prob = mx.nd.softmax(pred)[0].asnumpy()
+            # find the 5 class indices with the highest score
+            ind = mx.nd.argsort(pred, is_ascend=0)[0].astype('int').asnumpy().tolist()
+            # print the class name and predicted probability
             image_labels = []
-            for label in labels:
-                if len(image_labels) > -1:
-                    if label.description not in image_labels:
-                        image_labels.append(label.description)
+            for i in range(len(ind)):
+                # add all labels with probability >10% then break
+                if prob[ind[i]] <0.1:
+                    break
+                image_labels.append(net.classes[ind[i]])
+
 
             # use the image provided it had at least one label
             if len(image_labels) > 0:
@@ -97,8 +116,10 @@ if __name__ == '__main__':
 
 
         # write new file with image urls and prediction percentages
-        with open('predictions/reid/' + website +'_labels.csv', 'w') as myfile:
+        with open('predictions/reid/' + website +'_gluon.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
+
+
 
 

@@ -76,7 +76,7 @@ with open('tags/summary.csv', 'w') as myfile:
 
     url_and_tags_all = []
 
-    for source in ['inaturalist','instagram', 'twitter', 'flickr', 'ala', 'reddit']:
+    for source in ['inaturalist', 'twitter', 'flickr', 'ala', 'reddit']:
 
 
         url_and_tags = []
@@ -141,6 +141,9 @@ with open('tags/summary.csv', 'w') as myfile:
 
         url_and_tags_all+=url_and_tags
 
+        if len(url_and_tags)==0:
+            print(source)
+            continue
 
         url_and_tags_camel = []
         for url,tags,hannah in url_and_tags:
@@ -264,7 +267,7 @@ with open('tags/summary.csv', 'w') as myfile:
             print('RMS error from inaturalist')
             print(rms_error)
 
-        continue
+        #continue
 
 
 
@@ -388,7 +391,7 @@ with open('tags/summary.csv', 'w') as myfile:
 labels = []
 countsDict = {}
 
-for source in ['inaturalist','ala','instagram','flickr','twitter','reddit']:
+for source in ['inaturalist','ala','flickr','twitter','reddit']:
     if source == 'ala':
         tagsList = tagsListALA
         no_images = no_imagesALA
@@ -467,7 +470,7 @@ for i in sorted_indices:
 plt.clf()
 plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
 plt.ylim([-0.5, 0.5])
-for source in ['flickr','instagram','twitter','reddit','ala']:
+for source in ['flickr','twitter','reddit','ala']:
     counts = []
     for label in sortedLabels:
         for tuple in countsDict[label]:
@@ -483,7 +486,7 @@ for source in ['flickr','instagram','twitter','reddit','ala']:
 
 plt.gcf().subplots_adjust(bottom=0.35)
 plt.ylabel('Tag frequency deviation from iNaturalist')
-plt.legend(['flickr','instagram','twitter','reddit','ala'])
+plt.legend(['flickr','twitter','reddit','ala'])
 plt.show()
 
 

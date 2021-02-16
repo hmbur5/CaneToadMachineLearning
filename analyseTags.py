@@ -1,5 +1,7 @@
 from createTagsFiles import getTagsFromPredictions
 from addGoogleLabels import getLabelsFromPredictions
+from addAzureLabels import getAzureTagsFromPredictions
+from addGluonLabels import getGluonFromPredictions
 from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,7 +75,7 @@ def step(r, g, b, repetitions=1):
 
 
 # write new file with image urls and prediction percentages
-with open('tags/summary.csv', 'w') as myfile:
+with open('tags/summary_gluon.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit',
                  'rms error compared to ala', 'number of tags to cover 90% of images',
@@ -82,7 +84,7 @@ with open('tags/summary.csv', 'w') as myfile:
                  'proportion of images with animal and human', 'proportion of verified predator photos',
                  'colour distance histogram max'])
 
-    for source in ['ala', 'inaturalist', 'instagram_all', 'twitter', 'flickr', 'reddit', 'inaturalist']:
+    for source in ['ala','flickr_tree_frog']:
         row_to_add = []
 
         print(source)
@@ -90,8 +92,10 @@ with open('tags/summary.csv', 'w') as myfile:
 
         # if comparing objects, use getTags, if comparing labels, use getLabels
         # returns same shape list just there are more detailed names in the tags list.
+        #url_and_tags = getTagsFromPredictions(source)
         #url_and_tags = getLabelsFromPredictions(source)
-        url_and_tags = getLabelsFromPredictions(source)
+        #url_and_tags = getAzureTagsFromPredictions(source)
+        url_and_tags = getGluonFromPredictions(source)
 
         # remove any images without tags
         url_and_tags_new = []
@@ -100,7 +104,7 @@ with open('tags/summary.csv', 'w') as myfile:
                 url_and_tags_new.append(url_and_tags[index])
         url_and_tags = url_and_tags_new
 
-
+        '''
         # remove duplicate images
         url_and_tags_new = []
         open_images = []
@@ -116,7 +120,7 @@ with open('tags/summary.csv', 'w') as myfile:
                     print('duplicate')
             except urllib.error.HTTPError:
                 print(image_url)
-        url_and_tags = url_and_tags_new
+        url_and_tags = url_and_tags_new'''
 
 
         # check probability
@@ -270,7 +274,7 @@ with open('tags/summary.csv', 'w') as myfile:
             print('RMS error from ala')
             print(rms_error)
 
-        continue
+        #continue
 
 
 
@@ -431,7 +435,7 @@ with open('tags/summary.csv', 'w') as myfile:
 
         # combine whole image set to find dominant colours in that set
 
-        new_im = Image.new('RGB', (100*len(url_and_tags), 100))
+        '''new_im = Image.new('RGB', (100*len(url_and_tags), 100))
         index = 0
         for url, tags, coords, prediction, reid in url_and_tags:
             img = urllib.request.urlopen(url)
@@ -480,7 +484,8 @@ with open('tags/summary.csv', 'w') as myfile:
         plt.title(source)
         #plt.show()
         y, x, _ = plt.hist(distances, bins=50,density=True)
-        row_to_add.append(max(y))
+        row_to_add.append(max(y))'''
+        row_to_add.append(0)
 
 
         wr.writerow(row_to_add)
@@ -509,8 +514,8 @@ with open('tags/summary.csv', 'w') as myfile:
                     negatives.append(url)
                     if prediction>thresh:
                         false_pos.append(url)
-            false_pos_thresh.append(len(false_pos)/len(negatives))
-            false_neg_thresh.append(len(false_neg)/len(positives))
+            #false_pos_thresh.append(len(false_pos)/len(negatives))
+            #false_neg_thresh.append(len(false_neg)/len(positives))
 
             # creating a set of images that are above the given threshold
             above_thresh_set = []
@@ -549,8 +554,8 @@ with open('tags/summary.csv', 'w') as myfile:
                 popt, pcov = curve_fit(func, ticks, counts)
                 exponents_thresh.append(popt[0])
 
-        plt.plot(thresholds, false_pos_thresh)
-        plt.plot(thresholds, false_neg_thresh)
+        #plt.plot(thresholds, false_pos_thresh)
+        #plt.plot(thresholds, false_neg_thresh)
         plt.title(source)
         plt.legend(['false positives', 'false negatives'])
         plt.xlabel('Probability threshold')
@@ -577,7 +582,7 @@ with open('tags/summary.csv', 'w') as myfile:
 labels = []
 countsDict = {}
 
-for source in ['ala','instagram_all','flickr','twitter','reddit','inaturalist']:
+for source in ['ala','inaturalist','twitter','flickr','reddit','instagram_all']:
     if source == 'ala':
         tagsList = tagsListALA
         no_images = no_imagesALA
@@ -654,9 +659,8 @@ for i in sorted_indices:
         sortedLabels.append(allLabels[i])
 
 plt.clf()
-plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
 plt.ylim([-0.5, 0.5])
-for source in ['flickr','instagram_all','twitter','reddit','inaturalist']:
+for source in ['inaturalist','twitter','flickr','reddit']:
     counts = []
     for label in sortedLabels:
         for tuple in countsDict[label]:
@@ -669,8 +673,10 @@ for source in ['flickr','instagram_all','twitter','reddit','inaturalist']:
 
     ticks = range(len(counts))
     plt.scatter(ticks[0:25], counts[0:25])
+plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
+
 
 plt.gcf().subplots_adjust(bottom=0.35)
 plt.ylabel('Tag frequency deviation from ALA')
-plt.legend(['flickr','instagram','twitter','reddit','inaturalist'])
+plt.legend(['inaturalist','twitter','flickr','reddit'])
 plt.show()

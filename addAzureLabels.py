@@ -81,7 +81,7 @@ def getAzureTagsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['reddit', 'twitter']:
+    for website in ['flickr_tree_frog']:
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []

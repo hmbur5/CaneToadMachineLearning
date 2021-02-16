@@ -240,8 +240,8 @@ if __name__ == '__main__':
     photoUrls = []
     for pageNumber in [0,1]:
         # search limited to those with gps coordinates within australia
-        photoSearch = flickr.photos.search(text='european wasp', per_page=250, page=pageNumber, has_geo = True, extras=extras)#,
-                                           #bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
+        photoSearch = flickr.photos.search(text='tree frog', per_page=250, page=pageNumber, has_geo = True, extras=extras,
+                                           bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
         photos = photoSearch['photos']
         for element in photos['photo']:
             try:
@@ -249,8 +249,8 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    #createTagsFiles(photoUrls, 'flickr_european_wasp')
-    #exit(-1)
+    createTagsFiles(photoUrls, 'flickr_tree_frog')
+    exit(-1)
 
     #ala
     images=listOfAlaImageUrls('ala image urls/ala_european_wasp.csv')
