@@ -75,16 +75,17 @@ def step(r, g, b, repetitions=1):
 
 
 # write new file with image urls and prediction percentages
-with open('tags/summary_gluon.csv', 'w') as myfile:
+with open('tags/summary_azure.csv', 'w') as myfile:
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['website', 'proportion >90% cane toad probability', 'proportion verified cane toad','curve fit',
+                 'weighted sum error compared to ala',
                  'rms error compared to ala', 'number of tags to cover 90% of images',
                  'proprtion of images covered by frog and animal','proportion of images with multiple tags',
                  'proportion of images with any animal tag', 'proportion of images with multiple animal tags',
                  'proportion of images with animal and human', 'proportion of verified predator photos',
                  'colour distance histogram max'])
 
-    for source in ['ala','flickr_tree_frog']:
+    for source in ['ala','flickr','twitter','reddit','instagram','inaturalist','ala1','ala2','random']:
         row_to_add = []
 
         print(source)
@@ -92,10 +93,19 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
 
         # if comparing objects, use getTags, if comparing labels, use getLabels
         # returns same shape list just there are more detailed names in the tags list.
-        #url_and_tags = getTagsFromPredictions(source)
-        #url_and_tags = getLabelsFromPredictions(source)
-        #url_and_tags = getAzureTagsFromPredictions(source)
-        url_and_tags = getGluonFromPredictions(source)
+        website=source
+        if source=='ala1' or source=='ala2':
+            website='ala'
+        #url_and_tags = getTagsFromPredictions(website)
+        #url_and_tags = getLabelsFromPredictions(website)
+        url_and_tags = getAzureTagsFromPredictions(website)
+        #url_and_tags = getGluonFromPredictions(website)
+
+
+        if source=='ala1':
+            url_and_tags=url_and_tags[::2]
+        elif source=='ala2':
+            url_and_tags = url_and_tags[1::2]
 
         # remove any images without tags
         url_and_tags_new = []
@@ -130,7 +140,7 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
         url_and_tags_canetoad = []
 
         for url,tags,coords,prediction, reid in url_and_tags:
-            if reid=='T' or reid=='PT':
+            if reid=='Y' or reid=='M' or reid=='T' or reid=='PT':
                 CtagsList+=list(set(tags))
             else:
                 NtagsList+=list(set(tags))
@@ -144,7 +154,7 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
 
         url_and_tags_canetoad = []
         for url,tags,coords,prediction, reid in url_and_tags:
-            if reid=='T' or reid=='PT':
+            if reid=='Y' or reid=='M' or reid=='T' or reid=='PT':
                 url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
         print('proportion verified cane toad')
         print(len(url_and_tags_canetoad)/len(url_and_tags))
@@ -221,7 +231,12 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
         if source=='ala':
             tagsListALA = tagsList
             no_imagesALA = len(url_and_tags)
-            row_to_add.append("0")
+            row_to_add+=['0','0']
+        elif source=='ala1':
+            tagsListALA = tagsList
+            no_imagesALA = len(url_and_tags)
+            row_to_add+=['0','0']
+
         else:
             ALAlabels, ALAcounts = np.unique(tagsListALA, return_counts=True)
             # sort in descending order
@@ -269,6 +284,15 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
             plt.ylim([-0.5,0.5])
             #plt.show()
 
+            sum_error = 0
+            for val in sortedCounts:
+                if val>0:
+                    sum_error += 0.5*val
+                else:
+                    sum_error -= val
+            row_to_add.append('%.4f' %(sum_error))
+            print('sum error from ala')
+            print(sum_error)
             rms_error  = np.sqrt(np.mean(np.square(sortedCounts)))
             row_to_add.append('%.4f' %(rms_error))
             print('RMS error from ala')
@@ -281,7 +305,7 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
         # minumum number of tags to cover 90% of images
         print('number of tags covering 90% of images:')
         covered = []
-        for index in range(len(url_and_tags)):
+        for index in range(len(labels)):
             if len(covered)>0.90*len(url_and_tags):
                 break
             tag = labels[index]
@@ -576,13 +600,13 @@ with open('tags/summary_gluon.csv', 'w') as myfile:
 
 
 
-
+#exit(-1)
 
 # errors of each website
 labels = []
 countsDict = {}
 
-for source in ['ala','inaturalist','twitter','flickr','reddit','instagram_all']:
+for source in ['ala','flickr','twitter','reddit','instagram','inaturalist']:
     if source == 'ala':
         tagsList = tagsListALA
         no_images = no_imagesALA
@@ -631,7 +655,7 @@ allLabels = []
 for label in countsDict.keys():
     list = countsDict[label]
     for counts, source in list:
-        if source=='ala':
+        if source=='ala_european_wasp':
             alaComparison[label] = counts
     # if there were no counts of this tag
     if label not in alaComparison:
@@ -643,6 +667,7 @@ for label in countsDict.keys():
 
         allLabels.append(label)
         allCounts.append(list[index][0])
+
 
 
 abscounts = []
@@ -659,8 +684,8 @@ for i in sorted_indices:
         sortedLabels.append(allLabels[i])
 
 plt.clf()
-plt.ylim([-0.5, 0.5])
-for source in ['inaturalist','twitter','flickr','reddit']:
+plt.ylim([-0.6, 0.6])
+for source in ['flickr','twitter','reddit','instagram','inaturalist']:
     counts = []
     for label in sortedLabels:
         for tuple in countsDict[label]:
@@ -673,10 +698,12 @@ for source in ['inaturalist','twitter','flickr','reddit']:
 
     ticks = range(len(counts))
     plt.scatter(ticks[0:25], counts[0:25])
+    print(counts[0])
+
 plt.xticks(ticks[0:25], sortedLabels[0:25], rotation='vertical')
 
 
 plt.gcf().subplots_adjust(bottom=0.35)
 plt.ylabel('Tag frequency deviation from ALA')
-plt.legend(['inaturalist','twitter','flickr','reddit'])
+plt.legend(['flickr','twitter','reddit','instagram', 'inaturalist'])
 plt.show()

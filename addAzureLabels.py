@@ -20,7 +20,7 @@ from createTagsFiles import getTagsFromPredictions
 import csv
 import math
 
-subscription_key = "98518eba899046c78fc8f5601607f9a4"
+subscription_key = "eb923ba89759461db59d8a5542f54569"
 endpoint = "https://canetoadimageclassification1.cognitiveservices.azure.com/"
 computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
 
@@ -81,7 +81,7 @@ def getAzureTagsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['flickr_tree_frog']:
+    for website in ['ala','flickr','twitter','reddit','instagram','inaturalist','random']:
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []

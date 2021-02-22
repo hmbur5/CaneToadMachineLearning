@@ -35,6 +35,8 @@ def createTagsFiles(image_url_list, file_name):
         except AttributeError as e:
             print(image_url)
             print(e)
+        except UnicodeEncodeError:
+            print(image_url)
     image_url_list = new_image_url_list
     if len(image_url_list)>250:
         image_url_list = image_url_list[0:250]
@@ -119,7 +121,7 @@ def getTagsFromFile(file_name):
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             url = lines[0]
-            tags = lines[1]
+            tags = lines[2]
             tags = tags[1:-1] # remove [ and ] from string
             if len(tags)==0:
                 newTags = []
@@ -129,13 +131,13 @@ def getTagsFromFile(file_name):
                 newTags = []
                 for tag in tags:
                     newTags.append(tag[1:-1])
-            coords = lines[2]
+            coords = lines[1]
             coords = coords[1:-1]  # remove [ and ] from string
             coords = list(coords.split(", "))  # convert back to list
             for index, coord in enumerate(coords):
                 coords[index] = float(coord)
             # remove quotation marks from each string
-            url_and_tags.append([url, newTags, coords])
+            url_and_tags.append([url, coords, newTags])
     return url_and_tags
 
 
@@ -145,11 +147,11 @@ def getTagsFromPredictions(file_name, return_note=False):
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
-            if lines[0]=='url':
+            if lines[0]=='url' or lines[0]=='':
                 continue
 
             url = lines[0]
-            tags = lines[2]
+            tags = lines[1]
             if tags[0]!= '[':
                 continue
             tags = tags[1:-1] # remove [ and ] from string
@@ -162,19 +164,26 @@ def getTagsFromPredictions(file_name, return_note=False):
                 for tag in tags:
                     newTags.append(tag[1:-1])
             # getting best crop
-            coords = lines[1]
+            coords = lines[2]
             if coords!='NA':
                 coords = coords[1:-1]  # remove [ and ] from string
                 coords = list(coords.split(", "))  # convert back to list
                 for index, coord in enumerate(coords):
                     coords[index] = float(coord)
-            prediction = float(lines[4])
-            reid = lines[5]
+            prediction = 0#float(lines[4])
+            try:
+                note=lines[6]
+            except IndexError:
+                index=4
+            else:
+                index=5
+
+            reid = lines[index]
             if not return_note:
                 url_and_tags.append([url, newTags, coords, prediction, reid])
             else:
                 try:
-                    note = lines[6]
+                    note = lines[index+1]
                 except IndexError:
                     note = ''
                 url_and_tags.append([url, newTags, coords, prediction, reid, note])
@@ -219,11 +228,11 @@ if __name__ == '__main__':
 
     # twitter
     imageUrls = []
-    with open('twitter_canetoad_hashtag/twitter_cane_toad_hashtag.html') as file:
+    with open('tags/twitter_german_wasp.html') as file:
         for line in file:
             imageUrls.append(line[10:-4])
 
-    #createTagsFiles(imageUrls, 'twitter')
+    #createTagsFiles(imageUrls, 'twitter_german_wasp')
 
     #exit(-1)
 
@@ -235,13 +244,13 @@ if __name__ == '__main__':
 
     flickr = FlickrAPI(FLICKR_PUBLIC, FLICKR_SECRET, format='parsed-json')
     # extras for photo search (can include geo tag, date etc)
-    extras = 'geo, url_t, url_c, date_taken'
+    extras = 'geo, url_t, url_c, date_upload'
 
     photoUrls = []
     for pageNumber in [0,1]:
         # search limited to those with gps coordinates within australia
-        photoSearch = flickr.photos.search(text='tree frog', per_page=250, page=pageNumber, has_geo = True, extras=extras,
-                                           bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
+        photoSearch = flickr.photos.search(text='german wasp', per_page=250, page=pageNumber, has_geo = True, extras=extras)#,
+                                           #bbox='113.338953078, -43.6345972634, 153.569469029, -10.6681857235')
         photos = photoSearch['photos']
         for element in photos['photo']:
             try:
@@ -249,8 +258,34 @@ if __name__ == '__main__':
             except:
                 # if larger image file doesn't exist, just use thumbnail
                 photoUrls.append(element['url_t'])
-    createTagsFiles(photoUrls, 'flickr_tree_frog')
-    exit(-1)
+    #createTagsFiles(photoUrls, 'flickr_german_wasp')
+    #exit(-1)
+
+    # getting random photos from flickr
+    import random
+    photoUrls = []
+    for i in range(300):
+        start_date = datetime.date(2020, 1, 1)
+        end_date = datetime.date(2021, 1, 1)
+        time_between_dates = end_date - start_date
+        days_between_dates = time_between_dates.days
+        random_number_of_days = random.randrange(days_between_dates)
+        random_date = start_date + datetime.timedelta(days=random_number_of_days)
+        random_date = datetime.datetime.combine(random_date, datetime.time(0, 0))
+        random_date = datetime.datetime.timestamp(random_date)
+
+        photoSearch = flickr.photos.search(max_upload_date=random_date, sort='date-posted-desc', extras=extras)
+        photos = photoSearch['photos']
+        for element in photos['photo']:
+            try:
+                photoUrls.append(element['url_c'])
+                print(element['url_c'])
+            except Exception as e:
+                print(e)
+                continue
+            else:
+                break
+    createTagsFiles(photoUrls, 'random')
 
     #ala
     images=listOfAlaImageUrls('ala image urls/ala_european_wasp.csv')
@@ -261,8 +296,8 @@ if __name__ == '__main__':
     # inaturalist
     df = pd.read_csv("ala image urls/iNaturalist_european_wasp.csv")
     saved_column = list(df['image_url'])
-    createTagsFiles(saved_column[0:500], 'inaturalist_european_wasp')
-    exit(-1)
+    #createTagsFiles(saved_column[0:250], 'inaturalist_european_wasp')
+    #exit(-1)
 
 
     # instagram
@@ -276,8 +311,8 @@ if __name__ == '__main__':
         count = 0
         for post in posts:
             # skip all posts from december/november
-            if post.date>datetime.datetime(2020, 10, 28):
-                continue
+            #if post.date>datetime.datetime(2020, 10, 28):
+            #    continue
             print(post.date)
             time.sleep(1)
             if not additionalTag or additionalTag in post.caption_hashtags:
@@ -286,14 +321,15 @@ if __name__ == '__main__':
                 if count == maxCount:
                     return urls
 
-    justCaneToad = get_hashtags_posts('canetoad', 400)
+    #justCaneToad = get_hashtags_posts('germanwasp', 400)
     #caneToadAndFrog = get_hashtags_posts('canetoad', 500, 'frog')
     #caneToadAndAmphibian = get_hashtags_posts('amphibian', 500, 'frog')
 
-    createTagsFiles(justCaneToad, 'instgramCaneToad_all')
+    #createTagsFiles(justCaneToad, 'instagram_german_wasp')
     #createTagsFiles(caneToadAndFrog, 'instgramCaneToadAndFrog')
     #createTagsFiles(caneToadAndAmphibian, 'instgramCaneToadAndAmphibian')
-    exit(-1)
+    #exit(-1)
+
 
 
     # reddit
@@ -302,7 +338,7 @@ if __name__ == '__main__':
     reddit = praw.Reddit(client_id='taeY_V0qktbKRg', client_secret='FCXYgqAcZ3vjTOrID52UOPiDqBk', user_agent='canetoad')
     all = reddit.subreddit('all')
     reddit_url_list = []
-    for b in all.search("cane toads", limit=500):
+    for b in all.search("german wasps", limit=500):
         try:
             # if image urls are in metadata
             for key in b.media_metadata.keys():
@@ -312,7 +348,7 @@ if __name__ == '__main__':
             # else if image url is in the submission
             reddit_url_list.append(b.url)
 
-    createTagsFiles(reddit_url_list, 'reddit')
+    createTagsFiles(reddit_url_list, 'reddit_german_wasps')
 
 
 

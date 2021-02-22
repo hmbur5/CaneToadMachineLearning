@@ -21,7 +21,7 @@ import numpy as np
 
 def getGluonFromPredictions(file_name, return_note=False):
     url_and_labels = []
-    with open('predictions/reid/' + file_name +'_gluon.csv', "r") as csv_file:
+    with open('predictions/german_wasp/' + file_name +'_gluon.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -73,7 +73,7 @@ def getGluonFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['reddit', 'instagram_all']:
+    for website in ['random']:
         print(website)
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
@@ -87,12 +87,17 @@ if __name__ == '__main__':
             net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
             # load image
             try:
-                fname = mx.test_utils.download(url, fname='currentImage.jpg', overwrite=True)
+                url_file = url.replace('/', '').replace(':','')
+                fname = mx.test_utils.download(url, fname='instagram_images/'+url_file, overwrite=True)
             except Exception as e:
                 print(e)
                 print(url)
                 continue
-            img = mx.ndarray.array(cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB))
+            try:
+                img = mx.ndarray.array(cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB))
+            except Exception as e:
+                print(e)
+                print(url)
             # apply default data preprocessing
             transformed_img = gluoncv.data.transforms.presets.imagenet.transform_eval(img)
             # run forward pass to obtain the predicted score for each class
@@ -116,7 +121,7 @@ if __name__ == '__main__':
 
 
         # write new file with image urls and prediction percentages
-        with open('predictions/reid/' + website +'_gluon.csv', 'w') as myfile:
+        with open('predictions/german_wasp/' + website +'_gluon.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
 

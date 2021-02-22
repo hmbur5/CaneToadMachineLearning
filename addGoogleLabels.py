@@ -17,7 +17,7 @@ import csv
 
 def getLabelsFromPredictions(file_name, return_note=False):
     url_and_labels = []
-    with open('predictions/reid/' + file_name +'_labels.csv', "r") as csv_file:
+    with open('predictions/german_wasp/' + file_name +'_labels.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -69,7 +69,7 @@ def getLabelsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['flickr', 'twitter', 'inaturalist']:
+    for website in ['random']:
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []
@@ -100,5 +100,6 @@ if __name__ == '__main__':
         with open('predictions/reid/' + website +'_labels.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
+    print(url_and_labels)
 
 
