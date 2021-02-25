@@ -27,9 +27,9 @@ computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredenti
 
 
 
-def getAzureTagsFromPredictions(file_name, return_note=False):
+def getAzureTagsFromPredictions(file_name, file_dir, return_note=False):
     url_and_labels = []
-    with open('predictions/reid/' + file_name +'_azure.csv', "r") as csv_file:
+    with open('predictions/'+file_dir+'/' + file_name +'_azure.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -81,7 +81,7 @@ def getAzureTagsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['ala','flickr','twitter','reddit','instagram','inaturalist','random']:
+    for website in ['instagram']:
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
 
         # write new file with image urls and prediction percentages
-        with open('predictions/reid/' + website +'_azure.csv', 'w') as myfile:
+        with open('predictions/german_wasp/' + website +'_azure.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
 

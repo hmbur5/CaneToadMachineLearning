@@ -5,6 +5,71 @@ import os, ssl
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None)):
     ssl._create_default_https_context = ssl._create_unverified_context
 
+
+
+# instagram
+from instaloader import Instaloader
+import datetime
+import time
+loader = Instaloader()
+NUM_POSTS = 10
+
+
+def get_hashtags_posts(mainTag, maxCount, additionalTag=None):
+    posts = loader.get_hashtag_posts(mainTag)
+    urls = []
+    count = 0
+    for post in posts:
+        # skip all posts from december/november
+        if post.date>datetime.datetime(2021, 2, 25):
+            continue
+        print(post.date)
+        time.sleep(1)
+        if not additionalTag or additionalTag in post.caption_hashtags:
+            urls.append(post.url)
+            count += 1
+            if count == maxCount:
+                return urls
+
+instagram_urls = get_hashtags_posts('germanwasp', 400)
+
+new_rows=[]
+with open('instagram_images/instagram_tag_predictions.csv', "r") as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    for lines in csv_reader:
+        element=lines
+        if len(lines)>0:
+            if lines[0]=='url':
+                continue
+            url = lines[0]
+
+            file_name = url.replace('/','')
+            file_name = file_name.replace(':','')
+
+            try:
+                file_image = Image.open('instagram_images/'+file_name)
+            except:
+                print(url)
+                continue
+
+            for insta_url in instagram_urls:
+                img = urllib.request.urlopen(insta_url)
+                img = Image.open(img)
+                if file_image==img:
+                    element[0]=insta_url
+                    print('found')
+                    instagram_urls.remove(insta_url)
+                    break
+        new_rows.append(element)
+
+with open('predictions/german_wasp/instagram_tag_predictions.csv', "w") as csv_file:
+    wr = csv.writer(csv_file, delimiter=',')
+    wr.writerows(new_rows)
+
+exit()
+
+
+
 url_and_tags = []
 with open('predictions/instgramCaneToad_all_tag_predictions.csv', "r") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')

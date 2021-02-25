@@ -15,13 +15,13 @@ import csv
 
 
 
-def getLabelsFromPredictions(file_name, return_note=False):
+def getLabelsFromPredictions(file_name, file_dir,return_note=False):
     url_and_labels = []
-    with open('predictions/german_wasp/' + file_name +'_labels.csv', "r") as csv_file:
+    with open('predictions/'+file_dir+'/' + file_name +'_labels.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
-            if lines[0]=='url':
+            if lines[0]=='url' or lines[0]=='':
                 continue
 
             url = lines[0]
@@ -69,7 +69,7 @@ def getLabelsFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['random']:
+    for website in ['instagram']:
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
         url_and_labels = []
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
 
         # write new file with image urls and prediction percentages
-        with open('predictions/reid/' + website +'_labels.csv', 'w') as myfile:
+        with open('predictions/german_wasp/' + website +'_labels.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
     print(url_and_labels)

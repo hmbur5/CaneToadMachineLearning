@@ -19,13 +19,13 @@ import cv2
 import numpy as np
 
 
-def getGluonFromPredictions(file_name, return_note=False):
+def getGluonFromPredictions(file_name, file_dir, return_note=False):
     url_and_labels = []
-    with open('predictions/german_wasp/' + file_name +'_gluon.csv', "r") as csv_file:
+    with open('predictions/'+file_dir+'/' + file_name +'_gluon.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
-            if lines[0]=='url':
+            if lines[0]=='url' or lines[0]=='':
                 continue
 
             url = lines[0]
@@ -73,7 +73,7 @@ def getGluonFromPredictions(file_name, return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['random']:
+    for website in ['instagram']:
         print(website)
 
         url_and_tags = getTagsFromPredictions(website, return_note=True)
@@ -87,7 +87,8 @@ if __name__ == '__main__':
             net = gluoncv.model_zoo.get_model(model_name, pretrained=True)
             # load image
             try:
-                url_file = url.replace('/', '').replace(':','')
+                #url_file = url.replace('/', '').replace(':','')
+                url_file='current_image'
                 fname = mx.test_utils.download(url, fname='instagram_images/'+url_file, overwrite=True)
             except Exception as e:
                 print(e)

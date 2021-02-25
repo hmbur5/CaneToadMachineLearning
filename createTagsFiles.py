@@ -141,9 +141,9 @@ def getTagsFromFile(file_name):
     return url_and_tags
 
 
-def getTagsFromPredictions(file_name, return_note=False):
+def getTagsFromPredictions(file_name, file_dir, return_note=False):
     url_and_tags = []
-    with open('predictions/reid/' + file_name +'_tag_predictions.csv', "r") as csv_file:
+    with open('predictions/'+file_dir+'/' + file_name +'_tag_predictions.csv', "r") as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for lines in csv_reader:
             # skip over first line
@@ -164,7 +164,7 @@ def getTagsFromPredictions(file_name, return_note=False):
                 for tag in tags:
                     newTags.append(tag[1:-1])
             # getting best crop
-            coords = lines[2]
+            coords = 'NA'# lines[1]
             if coords!='NA':
                 coords = coords[1:-1]  # remove [ and ] from string
                 coords = list(coords.split(", "))  # convert back to list
