@@ -5,6 +5,38 @@ import os, ssl
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None)):
     ssl._create_default_https_context = ssl._create_unverified_context
 
+from createTagsFiles import getTagsFromPredictions
+from addGoogleLabels import getLabelsFromPredictions
+from addAzureLabels import getAzureTagsFromPredictions
+from addGluonLabels import getGluonFromPredictions
+import random
+for species in ['cane_toad']:
+    for classifier in ['tags','labels','azure','imagenet']:
+        for source in ['ala_2.', 'flickr', 'twitter', 'reddit', 'inaturalist', 'random']:
+
+            for classifier, classifier_results in [['tags', getTagsFromPredictions],
+                                                   ['labels', getLabelsFromPredictions],
+                                                   ['azure', getAzureTagsFromPredictions],
+                                                   ['imagenet', getGluonFromPredictions]]:
+                if source=='ala_2.':
+                    url_and_tags = classifier_results('ala', species)
+                    url_and_tags = url_and_tags[1::2]
+
+                else:
+                    url_and_tags = classifier_results(source, species)
+                random.shuffle(url_and_tags)
+
+
+                sample_no = 5
+
+                for sampleIndex in range(sample_no):
+                    sample = url_and_tags[sampleIndex::sample_no]
+                    # write new file with image urls and prediction percentages
+                    with open('predictions/cane_toad_samples/' + source + str(sampleIndex)+'_'+classifier+'.csv', 'w') as myfile:
+                        wr = csv.writer(myfile, delimiter=',')
+                        wr.writerows(sample)
+
+exit()
 
 
 # instagram

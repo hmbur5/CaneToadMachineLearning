@@ -11,6 +11,7 @@ from predictFromImageUrl import predictFromImageUrl
 import time
 import datetime
 from PIL import Image
+import pandas as pd
 
 
 
@@ -38,8 +39,8 @@ def createTagsFiles(image_url_list, file_name):
         except UnicodeEncodeError:
             print(image_url)
     image_url_list = new_image_url_list
-    if len(image_url_list)>250:
-        image_url_list = image_url_list[0:250]
+    if len(image_url_list)>500:
+        image_url_list = image_url_list[0:500]
 
 
     url_and_tags = []
@@ -61,6 +62,8 @@ def createTagsFiles(image_url_list, file_name):
 
 
         except urllib.error.HTTPError:
+            pass
+        except urllib.error.URLError:
             pass
         except TypeError:
             pass
@@ -151,7 +154,10 @@ def getTagsFromPredictions(file_name, file_dir, return_note=False):
                 continue
 
             url = lines[0]
-            tags = lines[1]
+            if pd.read_csv('predictions/'+file_dir+'/' + file_name +'_tag_predictions.csv', nrows=1).columns[1]=='best crop':
+                tags=lines[2]
+            else:
+                tags = lines[1]
             if tags[0]!= '[':
                 continue
             tags = tags[1:-1] # remove [ and ] from string
@@ -264,6 +270,7 @@ if __name__ == '__main__':
     # getting random photos from flickr
     import random
     photoUrls = []
+    '''
     for i in range(300):
         start_date = datetime.date(2020, 1, 1)
         end_date = datetime.date(2021, 1, 1)
@@ -286,11 +293,11 @@ if __name__ == '__main__':
             else:
                 break
     createTagsFiles(photoUrls, 'random')
-
+'''
     #ala
-    images=listOfAlaImageUrls('ala image urls/ala_european_wasp.csv')
-    #createTagsFiles(images[0:500],'ala_european_wasp')
-    #exit(-1)
+    images=listOfAlaImageUrls('ala image urls/caneToadRawFile.csv')
+    createTagsFiles(images[0:600],'ala_cane_toad')
+    exit(-1)
 
 
     # inaturalist

@@ -69,9 +69,9 @@ def getLabelsFromPredictions(file_name, file_dir,return_note=False):
 
 
 if __name__ == '__main__':
-    for website in ['instagram']:
+    for website in ['ala']:
 
-        url_and_tags = getTagsFromPredictions(website, return_note=True)
+        url_and_tags = getTagsFromPredictions(website, 'cane_toad',return_note=True)
         url_and_labels = []
 
         for url, tags, coords, prediction, reid, note in url_and_tags:
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
 
         # write new file with image urls and prediction percentages
-        with open('predictions/german_wasp/' + website +'_labels.csv', 'w') as myfile:
+        with open('predictions/cane_toad/' + website +'_labels.csv', 'w') as myfile:
             wr = csv.writer(myfile, delimiter=',')
             wr.writerows(url_and_labels)
     print(url_and_labels)
