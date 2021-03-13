@@ -31,10 +31,16 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
         for classifier,classifier_results in [['tags',getTagsFromPredictions], ['labels',getLabelsFromPredictions],
                                               ['azure',getAzureTagsFromPredictions], ['imagenet',getGluonFromPredictions]]:
             dict_class[species][classifier] = {}
+            tagsList_dict = {}
+            noImages_dict = {}
 
-           
+            sources = ['flickr', 'twitter', 'reddit', 'inaturalist', 'random','ala_2.']
+            source_samples = ['ala']
+            for sample in range(5):
+                for source in sources:
+                    source_samples.append(source + str(sample))
 
-            for source in ['ala','flickr','twitter','reddit','inaturalist','instagram','ala_1','ala_2','random']:
+            for source in source_samples:
                 # skip over instagram if necessary as i dont have these images
                 if species!='german_wasp' and source=='instagram':
                     continue
@@ -47,18 +53,28 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
                 # if comparing objects, use getTags, if comparing labels, use getLabels
                 # returns same shape list just there are more detailed names in the tags list.
                 website=source
-                if source=='ala_1' or source=='ala_2':
-                    website='ala'
-                url_and_tags = classifier_results(website, species)
+
+                url_and_tags = []
+
+                with open('predictions/cane_toad_samples/' + source +'_' + classifier + '.csv', "r") as csv_file:
+                    csv_reader = csv.reader(csv_file, delimiter=',')
+                    for lines in csv_reader:
+                        tags=lines[1]
+                        if tags[0] != '[':
+                            continue
+                        tags = tags[1:-1]  # remove [ and ] from string
+                        if len(tags) == 0:
+                            newTags = []
+                        else:
+                            tags = list(tags.split(", "))  # convert back to list
+                            # remove quotation marks from each string
+                            newTags = []
+                            for tag in tags:
+                                newTags.append(tag[1:-1])
+                        lines[1] = newTags
+                        url_and_tags.append(lines)
 
 
-                if source=='ala_1':
-                    url_and_tags=url_and_tags[::2]
-                elif source=='ala_2':
-                    url_and_tags = url_and_tags[1::2]
-
-                if source=='ala':
-                    url_and_tags = url_and_tags[::2]
 
                 # remove any images without tags
                 url_and_tags_new = []
@@ -97,9 +113,9 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
                         CtagsList+=list(set(tags))
                     else:
                         NtagsList+=list(set(tags))
-                    if prediction>0.90:
-                        url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
-                    image_url_list.append(url)
+                    #if prediction>0.90:
+                    #    url_and_tags_canetoad.append([url, tags, coords, prediction, reid])
+                    #image_url_list.append(url)
                 #print('proportion >90% cane toad probability')
                 #print(len(url_and_tags_canetoad)/len(url_and_tags))
                 #row_to_add.append("%.4f"%(len(url_and_tags_canetoad)/len(url_and_tags)))
@@ -175,6 +191,14 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
 
 
                 # compare distributions
+                tagsList_dict[source] = tagsList
+                noImages_dict[source] = len(url_and_tags)
+
+                if source=='ala':
+                    tagsListALA = tagsList
+                    no_imagesALA = len(url_and_tags)
+                    row_to_add+=['0','0']
+                '''
                 if source == 'instagram_all':
                     tagsListInstagram = tagsList
                     no_imagesInstagram = len(url_and_tags)
@@ -198,8 +222,9 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
                     tagsListALA = tagsList
                     no_imagesALA = len(url_and_tags)
                     row_to_add+=['0','0']
+                    '''
 
-                else:
+                if source!='ala':
                     ALAlabels, ALAcounts = np.unique(np.array(tagsListALA)[:,0],return_counts=1)
                     # sort in descending order
 
@@ -245,7 +270,7 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
                     plt.title(classifier +' TFDs using '+source)
                     plt.ylim([-0.5,0.5])
                     #if species=='cane_toad' and source=='ala2':
-                        #plt.show()
+                    #plt.show()
 
                     sum_error = 0
                     print(sortedCounts)
@@ -350,21 +375,21 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
                     for url, tags, coords, prediction, reid in url_and_tags:
                         if reid == 'T' or reid == 'PT':
                             positives.append(url)
-                            if prediction<thresh:
-                                false_neg.append(url)
+                            #if prediction<thresh:
+                            #    false_neg.append(url)
                         else:
                             negatives.append(url)
-                            if prediction>thresh:
-                                false_pos.append(url)
+                            #if prediction>thresh:
+                            #    false_pos.append(url)
                     #false_pos_thresh.append(len(false_pos)/len(negatives))
                     #false_neg_thresh.append(len(false_neg)/len(positives))
 
                     # creating a set of images that are above the given threshold
                     above_thresh_set = []
                     verified = []
-                    for url, tags, coords, prediction, reid in url_and_tags:
-                        if prediction>thresh:
-                            above_thresh_set.append([url, tags, coords, prediction, reid])
+                    #for url, tags, coords, prediction, reid in url_and_tags:
+                        #if prediction>thresh:
+                        #    above_thresh_set.append([url, tags, coords, prediction, reid])
 
                     # number of images frog and animal cover
                     covered = []
@@ -424,7 +449,10 @@ with open('tags/TFD_sums.csv', 'w') as myfile:
 labels = []
 countsDict = {}
 
-for source in ['ala','flickr','twitter','reddit','instagram','inaturalist']:
+for source in source_samples:
+    tagsList = tagsList_dict[source]
+    no_images = noImages_dict[source]
+    '''
     if source == 'ala':
         tagsList = tagsListALA
         no_images = no_imagesALA
@@ -442,7 +470,7 @@ for source in ['ala','flickr','twitter','reddit','instagram','inaturalist']:
         no_images = no_imagesReddit
     if source == 'inaturalist':
         tagsList = tagsListInaturalist
-        no_images = no_imagesInaturalist
+        no_images = no_imagesInaturalist'''
 
 
     labels_new, counts = np.unique(np.array(tagsList)[:,0],return_counts=1)
@@ -538,14 +566,19 @@ with open('tags/covariance.csv', 'w') as myfile:
     plt.clf()
     wr = csv.writer(myfile, delimiter=',')
     wr.writerow(['observed','predicted','website', 'classifier','class','classifier_class','classifier_number'])
-    for index2, species in enumerate(['cane_toad', 'german_wasp','camel']):
+    for index2, species in enumerate(['cane_toad_samples']):#, 'german_wasp','camel']):
         #plt.clf()
         markers = ['o','v','s','p','*']
         colors = ['red','green','blue','orange']
         for index1, classifier in enumerate(['tags', 'labels','azure', 'imagenet']):
-            x1 = dict_class[species][classifier]['ala2'][0]
-            #x1 = 0
-            x2 = dict_class[species][classifier]['random'][0]
+            x1_vals = []
+            x2_vals = []
+            for sampleIndex in range(5):
+                x1_vals.append(dict_class[species][classifier]['ala_2.'+str(sampleIndex)][0])
+                #x1 = 0
+                x2_vals.append(dict_class[species][classifier]['random'+str(sampleIndex)][0])
+            x1 = np.mean(x1_vals)
+            x2 = np.mean(x2_vals)
             print(x1)
             print(x2)
             y1 = 1
@@ -556,49 +589,72 @@ with open('tags/covariance.csv', 'w') as myfile:
             y_pred = []
             y_obs = []
             #plt.clf()
-            for index,source in enumerate(['flickr','twitter', 'instagram','reddit', 'inaturalist']):
-                if species!='german_wasp' and source=='instagram':
-                    continue
-                x = dict_class[species][classifier][source][0]
-                print(x)
-                y_pred.append([m*x+c])
-                y_obs.append([dict_class[species][classifier][source][1]])
-                #plt.plot(index2, dict_class[species][classifier][source][1]-(m*x+c), marker=markers[index], color=colors[index1])
-                plt.scatter(x, [dict_class[species][classifier][source][1]], marker=markers[index], color = colors[index1])
-                #plt.scatter((x-x1)/(x2-x1), [dict_class[species][classifier][source][1]], marker=markers[index], color = colors[index1])
-                #plt.scatter(m*x+c, dict_class[species][classifier][source][1])
-                wr.writerow([dict_class[species][classifier][source][1], m*x+c, source, classifier, species, 'cfier'+str(index1+1)+'_species'+str(index2+1), index1])
-            #error = np.subtract(y_pred,y_obs)
-            #plt.plot(index2, np.sqrt(np.mean(np.square(error))), marker=markers[index1], color='black')
+            for index,website in enumerate(['flickr','twitter', 'instagram','reddit', 'inaturalist']):
+                tfds = []
+                fractions = []
+                for sampleIndex in range(5):
+                    source=website+str(sampleIndex)
+                    if species!='german_wasp' and website=='instagram':
+                        continue
+                    x = dict_class[species][classifier][source][0]
+                    tfds.append(x)
+                    fractions.append([dict_class[species][classifier][source][1]])
+                    print(x)
+                    y_pred.append([m*x+c])
 
-            plt.plot([x1,x2],[y1,y2], color=colors[index1])
-            #plt.plot([0,1],[y1,y2], color='black')
+                    y_obs.append([dict_class[species][classifier][source][1]])
+                    #plt.plot(index2, dict_class[species][classifier][source][1]-(m*x+c), marker=markers[index], color=colors[index1])
+                    #plt.scatter(x, [dict_class[species][classifier][source][1]], marker=markers[index], color = colors[index1])
+                    #plt.scatter((x-x1)/(x2-x1), [dict_class[species][classifier][source][1]], marker=markers[index], color = colors[index1])
+                    #plt.scatter(m*x+c, dict_class[species][classifier][source][1])
+                    wr.writerow([dict_class[species][classifier][source][1], m*x+c, source, classifier, species, 'cfier'+str(index1+1)+'_species'+str(index2+1), index1])
 
-            #plt.title('Observed proportion of desired images vs predicted')
-            #plt.legend(['flickr','twitter','instagram','reddit', 'inaturalist'])
-            #plt.xlabel('Predicted proportion of images similar to content of authoritative source')
-            #plt.ylabel('Observed proportion of images similar to content of authoritative source')
+                plt.plot([x1,x2],[y1,y2], color=colors[index1])
+                plt.fill_betweenx([y1,y2],[x1+np.std(x1_vals),x2+np.std(x2_vals)],[x1-np.std(x1_vals),x2-np.std(x2_vals)], color=colors[index1], alpha=0.03)
 
-            regression = linear_model.LinearRegression(fit_intercept=False).fit(y_pred, y_obs)
-            print('Coefficient: %.2f'
-                  %  regression.coef_)
-            # The coefficient of determination:
-            print('R^2: %.2f'
-                  % r2_score(y_pred, y_obs))
+                plt.errorbar([np.mean(tfds)], [np.mean(fractions)], yerr=np.std(fractions), xerr=np.std(tfds), color = colors[index1],alpha=0.6)
+                plt.scatter(np.mean(tfds), np.mean(fractions), marker=markers[index], color = colors[index1])
 
-            #plt.annotate('Coefficient: %.2f\n R^2: %.2f'%  (regression.coef_, r2_score(y_pred, y_obs)), [0.8,0.3])
+                #error = np.subtract(y_pred,y_obs)
+                #plt.plot(index2, np.sqrt(np.mean(np.square(error))), marker=markers[index1], color='black')
+
+                #plt.plot([0,1],[y1,y2], color='black')
+
+                #plt.title('Observed proportion of desired images vs predicted')
+                #plt.legend(['flickr','twitter','instagram','reddit', 'inaturalist'])
+                #plt.xlabel('Predicted proportion of images similar to content of authoritative source')
+                #plt.ylabel('Observed proportion of images similar to content of authoritative source')
+
+                regression = linear_model.LinearRegression(fit_intercept=False).fit(y_pred, y_obs)
+                print('Coefficient: %.2f'
+                      %  regression.coef_)
+                # The coefficient of determination:
+                print('R^2: %.2f'
+                      % r2_score(y_pred, y_obs))
+
+                #plt.annotate('Coefficient: %.2f\n R^2: %.2f'%  (regression.coef_, r2_score(y_pred, y_obs)), [0.8,0.3])
+
+            plt.title("Line predicting number of images of " + species + "s compared to weighted sum of TFD")
+            plt.xlabel("Sum of TFD from ALA images")
+            plt.ylabel("Fraction of images of " + species + "s in image set")
+            #f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
+            #handles = [f(markers[i], "k") for i in range(5)]
+            #labels = ['flickr', 'twitter', 'instagram', 'reddit','inaturalist']
+            #plt.legend(handles, labels, loc=1, framealpha=1)
             #plt.show()
-        plt.title("Errors for predicted and observed values across different platforms, species and classifiers")
+        #plt.title("Errors for predicted and observed values across different platforms, species and classifiers")
         #plt.title("Line predicting number of images of " +species+ "s compared to weighted sum of TFD")
+        plt.title("Line predicting number of images of cane_toads compared to weighted sum of TFD using samples")
         #plt.plot([x1, x2], [y1, y2], color='black')
         #plt.scatter([x1, x2], [y1, y2], color='black')
         #plt.scatter([8], [m * 8 + c], color='red')
         #plt.plot([3],[0],color='white')
         #plt.xticks([0,1,2,3],['cane_toad', 'german_wasp','camel',''],rotation='vertical')
-        plt.xlabel('Species')
-        plt.ylabel('Difference between prediction and observed value of fraction of desired images')
-        #plt.xlabel("Weighted sum of TFD from ALA images")
+        #plt.xlabel('Species')
+        #plt.ylabel('Difference between prediction and observed value of fraction of desired images')
+        plt.xlabel("Sum of TFD from ALA images")
         #plt.ylabel("Fraction of images of "+species+"s in image set")
+        plt.ylabel("Fraction of images of cane_toads in image set")
         f = lambda m, c: plt.plot([], [], marker=m, color=c, ls="none")[0]
 
         handles = [f("s", colors[i]) for i in range(4)]
